@@ -58,7 +58,7 @@ function GrassPatch({ pos, variant = 0 }: { pos: [number, number, number]; varia
 }
 
 // BuildablePlot - interactive tiles where players can build
-function PlotTile({ pos, id }: { pos: [number, number, number]; id: number }) {
+function PlotTile({ pos }: { pos: [number, number, number]; id: number }) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
