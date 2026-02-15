@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import TownMap from './components/TownMap';
+import TownMap from './Home/TownMap';
 
 function App() {
   console.log("Reached app.tsx")
