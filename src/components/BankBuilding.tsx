@@ -1,45 +1,120 @@
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Building2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
+import * as THREE from 'three';
 
-export default function BankBuilding() {
-  const navigate = useNavigate();
-  const [isClicked, setIsClicked] = useState(false);
+interface BankBuildingProps {
+  position?: [number, number, number];
+}
+
+export default function BankBuilding({ position = [0, 0, 0] }: BankBuildingProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
+
+  // Gentle rotation animation
+  useFrame(() => {
+    if (groupRef.current && hovered) {
+      groupRef.current.rotation.y += 0.005;
+    }
+  });
 
   const handleClick = () => {
-    setIsClicked(true);
-    setTimeout(() => {
-      navigate('/board');
-    }, 600);
+    window.location.href = '/board';
   };
 
   return (
-    <div
-      onClick={handleClick}
-      className={`relative cursor-pointer transition-all duration-300 ${isClicked ? 'animate-bounce-scale' : 'animate-float hover:animate-pulse-glow'}`}
-    >
-      <div className={`w-40 h-48 bg-gradient-to-br from-red-400 via-red-500 to-red-600 rounded-2xl shadow-2xl border-4 border-yellow-400 relative overflow-hidden transition-all duration-300 hover:shadow-xl ${isClicked ? 'scale-110' : 'hover:scale-105'}`}>
-        <div className="absolute inset-0 bg-white bg-opacity-10"></div>
+    <group ref={groupRef} position={position}>
+      {/* Main building - wider and shorter for cartoon style */}
+      <mesh 
+        castShadow 
+        receiveShadow 
+        onClick={handleClick}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
+        position={[0, 2, 0]}
+      >
+        <boxGeometry args={[5, 4, 5]} />
+        <meshStandardMaterial 
+          color="#FFFFFF" 
+          metalness={0.1} 
+          roughness={0.8}
+        />
+      </mesh>
 
-        <div className="absolute top-4 left-4 right-4 h-12 bg-yellow-300 rounded-xl border-2 border-yellow-600 flex items-center justify-center">
-          <span className="font-bold text-yellow-700 text-sm">BANK</span>
-        </div>
+      {/* Blue roof - flatter pyramid */}
+      <mesh position={[0, 4.5, 0]} castShadow>
+        <coneGeometry args={[4, 1.5, 4]} />
+        <meshStandardMaterial color="#4169E1" metalness={0.2} roughness={0.6} />
+      </mesh>
 
-        <div className="flex items-center justify-center h-full">
-          <div className="flex flex-col items-center gap-2">
-            <Building2 className="w-16 h-16 text-yellow-300 drop-shadow-lg" />
-            <span className="text-white font-bold text-sm drop-shadow-lg">Tap to Play!</span>
+      {/* Front entrance/door area - yellow/gold */}
+      <mesh position={[0, 1.2, 2.6]} castShadow receiveShadow>
+        <boxGeometry args={[2.5, 2.5, 0.3]} />
+        <meshStandardMaterial color="#FFD700" metalness={0.3} roughness={0.5} />
+      </mesh>
+
+      {/* Door */}
+      <mesh position={[0, 0.7, 2.75]} castShadow receiveShadow>
+        <boxGeometry args={[1.2, 2, 0.1]} />
+        <meshStandardMaterial color="#8B4513" metalness={0.2} roughness={0.7} />
+      </mesh>
+
+      {/* Sign above entrance */}
+      <mesh position={[0, 2.8, 2.65]} castShadow receiveShadow>
+        <boxGeometry args={[2, 0.5, 0.2]} />
+        <meshStandardMaterial 
+          color="#FFD700" 
+          metalness={0.4} 
+          roughness={0.4}
+          emissive={hovered ? '#FFA500' : '#000000'}
+          emissiveIntensity={hovered ? 0.3 : 0}
+        />
+      </mesh>
+
+      {/* Windows - 4 windows */}
+      {[
+        [-1.3, 2.8, 2.55],
+        [1.3, 2.8, 2.55],
+        [-1.3, 1.5, 2.55],
+        [1.3, 1.5, 2.55]
+      ].map((pos, i) => (
+        <mesh key={i} position={pos as [number, number, number]} castShadow receiveShadow>
+          <boxGeometry args={[0.7, 0.7, 0.1]} />
+          <meshStandardMaterial color="#87CEEB" metalness={0.7} roughness={0.2} />
+        </mesh>
+      ))}
+
+      {/* Side windows */}
+      {[
+        [2.55, 2.8, 0],
+        [2.55, 1.5, 0],
+        [-2.55, 2.8, 0],
+        [-2.55, 1.5, 0]
+      ].map((pos, i) => (
+        <mesh key={`side-${i}`} position={pos as [number, number, number]} castShadow receiveShadow>
+          <boxGeometry args={[0.1, 0.7, 0.7]} />
+          <meshStandardMaterial color="#87CEEB" metalness={0.7} roughness={0.2} />
+        </mesh>
+      ))}
+
+      {/* Hover tooltip */}
+      {hovered && (
+        <Html position={[0, 6, 0]} center>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 'bold',
+            color: '#4169E1',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none'
+          }}>
+            🏦 Click to enter!
           </div>
-        </div>
-
-        <div className="absolute bottom-3 left-3 right-3 h-6 bg-yellow-200 rounded border-2 border-yellow-600 flex gap-1 px-2">
-          <div className="w-2 h-2 bg-yellow-600 rounded-full mt-1"></div>
-          <div className="w-2 h-2 bg-yellow-600 rounded-full mt-1"></div>
-          <div className="w-2 h-2 bg-yellow-600 rounded-full mt-1"></div>
-        </div>
-      </div>
-
-      <div className={`absolute inset-0 w-40 h-48 bg-blue-400 rounded-2xl blur-lg opacity-0 transition-opacity duration-300 ${!isClicked && 'group-hover:opacity-30'} pointer-events-none`}></div>
-    </div>
+        </Html>
+      )}
+    </group>
   );
 }

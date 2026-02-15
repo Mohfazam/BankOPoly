@@ -1,26 +1,90 @@
-import { Coins } from 'lucide-react';
-
 export default function GameHUD() {
   return (
-    <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 animate-slide-in">
-      <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-full px-8 py-4 shadow-xl border-4 border-blue-400 flex items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full p-2 shadow-md">
-            <Coins className="w-6 h-6 text-yellow-700" />
+    <>
+      {/* Top info bar */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        background: 'linear-gradient(180deg, rgba(135, 206, 235, 0.95) 0%, rgba(135, 206, 235, 0.7) 100%)',
+        padding: '12px 20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontFamily: 'Arial, sans-serif',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        zIndex: 100
+      }}>
+        <div style={{ display: 'flex', gap: '24px' }}>
+          <div style={{
+            background: 'rgba(255, 215, 0, 0.9)',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontWeight: 'bold',
+            color: '#654321',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          }}>
+            <span style={{ fontSize: '18px' }}>💰</span>
+            <span style={{ fontSize: '16px' }}>1000</span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Zen Points</span>
-            <span className="text-2xl font-bold text-yellow-600">1,500</span>
+          
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.9)',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontWeight: 'bold',
+            color: '#2F4F4F',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          }}>
+            <span style={{ fontSize: '18px' }}>🏘️</span>
+            <span style={{ fontSize: '16px' }}>0</span>
           </div>
         </div>
 
-        <div className="w-px h-10 bg-blue-300 opacity-50"></div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-gray-700 uppercase">Level:</span>
-          <div className="bg-blue-400 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg shadow-md">1</div>
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          padding: '8px 20px',
+          borderRadius: '25px',
+          fontWeight: 'bold',
+          fontSize: '18px',
+          color: '#4169E1',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+        }}>
+          🏦 Town Builder
         </div>
       </div>
-    </div>
+
+      {/* Instructions tooltip */}
+      <div style={{
+        position: 'absolute',
+        bottom: 20,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'rgba(0, 0, 0, 0.85)',
+        color: 'white',
+        padding: '12px 24px',
+        borderRadius: '12px',
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '14px',
+        textAlign: 'center',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        zIndex: 100,
+        backdropFilter: 'blur(4px)'
+      }}>
+        <div style={{ marginBottom: '6px', fontWeight: 'bold', fontSize: '15px' }}>
+          🎮 Controls
+        </div>
+        <div style={{ opacity: 0.9, lineHeight: '1.6' }}>
+          🖱️ Drag to rotate • 🔍 Scroll to zoom • 🏦 Click bank to play
+        </div>
+      </div>
+    </>
   );
 }
