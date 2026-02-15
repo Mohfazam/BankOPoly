@@ -3,118 +3,240 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 
-interface BankBuildingProps {
+interface EmptyPlotGridProps {
   position?: [number, number, number];
 }
 
-export default function BankBuilding({ position = [0, 0, 0] }: BankBuildingProps) {
-  const groupRef = useRef<THREE.Group>(null);
-  const [hovered, setHovered] = useState(false);
+// Road tiles - the pathways between buildings
+function RoadTile({ pos }: { pos: [number, number, number] }) {
+  return (
+    <group position={[pos[0], 0, pos[2]]}>
+      {/* Road surface - gray asphalt */}
+      <mesh position={[0, 0.1, 0]} receiveShadow>
+        <boxGeometry args={[4, 0.15, 4]} />
+        <meshStandardMaterial 
+          color="#8B8B7F"
+          roughness={0.9}
+        />
+      </mesh>
 
-  // Gentle rotation animation
-  useFrame(() => {
-    if (groupRef.current && hovered) {
-      groupRef.current.rotation.y += 0.005;
-    }
-  });
+      {/* Road line markings */}
+      <mesh position={[0, 0.11, 0]}>
+        <boxGeometry args={[3.8, 0.01, 0.2]} />
+        <meshBasicMaterial color="#FFFF99" />
+      </mesh>
+      <mesh position={[0, 0.11, 0]}>
+        <boxGeometry args={[0.2, 0.01, 3.8]} />
+        <meshBasicMaterial color="#FFFF99" />
+      </mesh>
+    </group>
+  );
+}
 
-  const handleClick = () => {
-    window.location.href = '/board';
-  };
+// Decorative grass patches with variation
+function GrassPatch({ pos, variant = 0 }: { pos: [number, number, number]; variant?: number }) {
+  const colors = ['#6BCD59', '#5CBD4F', '#7BDD69'];
+  const color = colors[variant % colors.length];
 
   return (
-    <group ref={groupRef} position={position}>
-      {/* Main building - wider and shorter for cartoon style */}
-      <mesh 
-        castShadow 
-        receiveShadow 
-        onClick={handleClick}
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => setHovered(false)}
-        position={[0, 2, 0]}
-      >
-        <boxGeometry args={[5, 4, 5]} />
+    <group position={[pos[0], 0, pos[2]]}>
+      <mesh position={[0, 0.08, 0]} receiveShadow>
+        <boxGeometry args={[4, 0.15, 4]} />
         <meshStandardMaterial 
-          color="#FFFFFF" 
-          metalness={0.1} 
+          color={color}
           roughness={0.8}
         />
       </mesh>
 
-      {/* Blue roof - flatter pyramid */}
-      <mesh position={[0, 4.5, 0]} castShadow>
-        <coneGeometry args={[4, 1.5, 4]} />
-        <meshStandardMaterial color="#4169E1" metalness={0.2} roughness={0.6} />
+      {/* Grass highlights */}
+      <mesh position={[0, 0.09, 0]}>
+        <boxGeometry args={[3.9, 0.01, 3.9]} />
+        <meshStandardMaterial color={`${color}DD`} />
+      </mesh>
+    </group>
+  );
+}
+
+// BuildablePlot - interactive tiles where players can build
+function PlotTile({ pos, id }: { pos: [number, number, number]; id: number }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
+
+  useFrame(() => {
+    if (groupRef.current) {
+      const target = hovered ? 0.25 : 0;
+      groupRef.current.position.y += (target - groupRef.current.position.y) * 0.15;
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={[pos[0], 0, pos[2]]}>
+      {/* Base - darker green foundation */}
+      <mesh position={[0, -0.08, 0]} receiveShadow>
+        <boxGeometry args={[4.2, 0.15, 4.2]} />
+        <meshStandardMaterial color="#5A8A5A" />
       </mesh>
 
-      {/* Front entrance/door area - yellow/gold */}
-      <mesh position={[0, 1.2, 2.6]} castShadow receiveShadow>
-        <boxGeometry args={[2.5, 2.5, 0.3]} />
-        <meshStandardMaterial color="#FFD700" metalness={0.3} roughness={0.5} />
-      </mesh>
-
-      {/* Door */}
-      <mesh position={[0, 0.7, 2.75]} castShadow receiveShadow>
-        <boxGeometry args={[1.2, 2, 0.1]} />
-        <meshStandardMaterial color="#8B4513" metalness={0.2} roughness={0.7} />
-      </mesh>
-
-      {/* Sign above entrance */}
-      <mesh position={[0, 2.8, 2.65]} castShadow receiveShadow>
-        <boxGeometry args={[2, 0.5, 0.2]} />
+      {/* Main grass surface - interactive */}
+      <mesh 
+        castShadow 
+        receiveShadow 
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
+        position={[0, 0.08, 0]}
+      >
+        <boxGeometry args={[4, 0.15, 4]} />
         <meshStandardMaterial 
-          color="#FFD700" 
-          metalness={0.4} 
-          roughness={0.4}
-          emissive={hovered ? '#FFA500' : '#000000'}
-          emissiveIntensity={hovered ? 0.3 : 0}
+          color={hovered ? "#A8E6A1" : "#7EBD6B"}
+          roughness={0.8}
+          metalness={0.05}
         />
       </mesh>
 
-      {/* Windows - 4 windows */}
+      {/* Highlight stripe */}
+      <mesh position={[0, 0.095, 0]}>
+        <boxGeometry args={[3.8, 0.01, 3.8]} />
+        <meshStandardMaterial color="#9FE88F" />
+      </mesh>
+
+      {/* Corner pegs */}
       {[
-        [-1.3, 2.8, 2.55],
-        [1.3, 2.8, 2.55],
-        [-1.3, 1.5, 2.55],
-        [1.3, 1.5, 2.55]
-      ].map((pos, i) => (
-        <mesh key={i} position={pos as [number, number, number]} castShadow receiveShadow>
-          <boxGeometry args={[0.7, 0.7, 0.1]} />
-          <meshStandardMaterial color="#87CEEB" metalness={0.7} roughness={0.2} />
+        [-1.95, 0.1, -1.95],
+        [1.95, 0.1, -1.95],
+        [-1.95, 0.1, 1.95],
+        [1.95, 0.1, 1.95]
+      ].map((cornerPos, i) => (
+        <mesh key={i} position={cornerPos as [number, number, number]}>
+          <cylinderGeometry args={[0.12, 0.12, 0.08, 8]} />
+          <meshStandardMaterial color="#6B8E6B" />
         </mesh>
       ))}
 
-      {/* Side windows */}
-      {[
-        [2.55, 2.8, 0],
-        [2.55, 1.5, 0],
-        [-2.55, 2.8, 0],
-        [-2.55, 1.5, 0]
-      ].map((pos, i) => (
-        <mesh key={`side-${i}`} position={pos as [number, number, number]} castShadow receiveShadow>
-          <boxGeometry args={[0.1, 0.7, 0.7]} />
-          <meshStandardMaterial color="#87CEEB" metalness={0.7} roughness={0.2} />
-        </mesh>
-      ))}
-
-      {/* Hover tooltip */}
+      {/* Hover effects */}
       {hovered && (
-        <Html position={[0, 6, 0]} center>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.95)',
-            padding: '8px 16px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            fontFamily: 'Arial, sans-serif',
-            fontWeight: 'bold',
-            color: '#4169E1',
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none'
-          }}>
-            🏦 Click to enter!
-          </div>
-        </Html>
+        <>
+          {/* Glow ring */}
+          <mesh position={[0, 0.12, 0]}>
+            <boxGeometry args={[4.15, 0.01, 4.15]} />
+            <meshBasicMaterial color="#FFFFFF" transparent opacity={0.5} />
+          </mesh>
+          
+          <Html position={[0, 1.2, 0]} center>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              pointerEvents: 'none',
+            }}>
+              <div style={{
+                fontSize: '56px',
+                fontWeight: 'bold',
+                color: '#FFFFFF',
+                textShadow: '0 0 12px #228B22, 2px 2px 6px rgba(0,0,0,0.6)',
+                lineHeight: 1,
+                marginBottom: '4px'
+              }}>
+                +
+              </div>
+              <div style={{
+                background: 'linear-gradient(135deg, #2ECC71 0%, #27AE60 100%)',
+                color: 'white',
+                padding: '8px 20px',
+                borderRadius: '20px',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                boxShadow: '0 6px 16px rgba(0,0,0,0.5)',
+                border: '2px solid white'
+              }}>
+                Build Here
+              </div>
+            </div>
+          </Html>
+        </>
       )}
+    </group>
+  );
+}
+
+// Tree decoration for aesthetics
+function Tree({ pos }: { pos: [number, number, number] }) {
+  return (
+    <group position={[pos[0], pos[1], pos[2]]}>
+      {/* Trunk */}
+      <mesh position={[0, 0.4, 0]}>
+        <cylinderGeometry args={[0.15, 0.2, 0.8, 8]} />
+        <meshStandardMaterial color="#8B6F47" />
+      </mesh>
+      {/* Foliage */}
+      <mesh position={[0, 1.0, 0]} castShadow>
+        <sphereGeometry args={[0.5, 8, 8]} />
+        <meshStandardMaterial color="#228B22" />
+      </mesh>
+      <mesh position={[-0.3, 0.8, 0]} castShadow>
+        <sphereGeometry args={[0.4, 8, 8]} />
+        <meshStandardMaterial color="#2D8C2D" />
+      </mesh>
+      <mesh position={[0.3, 0.8, 0]} castShadow>
+        <sphereGeometry args={[0.4, 8, 8]} />
+        <meshStandardMaterial color="#2D8C2D" />
+      </mesh>
+    </group>
+  );
+}
+
+export default function EmptyPlotGrid({ position = [0, 0, 0] }: EmptyPlotGridProps) {
+  const gridSize = 6;
+  const spacing = 4.5;
+  const centerIdx = Math.floor(gridSize / 2);
+
+  // Build a grid with variety: roads, grass, and buildable plots
+  const getTileType = (row: number, col: number): 'plot' | 'road' | 'grass' => {
+    // Center is for the bank - return road
+    if (row === centerIdx && col === centerIdx) return 'road';
+    
+    // Create a cross pattern of roads through the middle
+    if (row === centerIdx || col === centerIdx) return 'road';
+    
+    // Buildable plots around the edges
+    return 'plot';
+  };
+
+  return (
+    <group position={position}>
+      {/* Expanded ground plane */}
+      <mesh position={[0, -0.3, 0]} receiveShadow>
+        <boxGeometry args={[35, 0.1, 35]} />
+        <meshStandardMaterial color="#4A7A4A" />
+      </mesh>
+
+      {/* Grid tiles */}
+      {Array.from({ length: gridSize * gridSize }).map((_, i) => {
+        const row = Math.floor(i / gridSize);
+        const col = i % gridSize;
+        const tileType = getTileType(row, col);
+
+        const x = (col - centerIdx) * spacing;
+        const z = (row - centerIdx) * spacing;
+        const pos: [number, number, number] = [x, 0, z];
+
+        if (tileType === 'road') {
+          return <RoadTile key={i} pos={pos} />;
+        } else if (tileType === 'grass') {
+          return <GrassPatch key={i} pos={pos} variant={i} />;
+        } else {
+          return <PlotTile key={i} pos={pos} id={i} />;
+        }
+      })}
+
+      {/* Decorative trees scattered around */}
+      <Tree pos={[-8, 0, -8]} />
+      <Tree pos={[8, 0, -8]} />
+      <Tree pos={[-8, 0, 8]} />
+      <Tree pos={[8, 0, 8]} />
+      <Tree pos={[0, 0, -10]} />
+      <Tree pos={[-10, 0, 0]} />
+      <Tree pos={[10, 0, 0]} />
+      <Tree pos={[0, 0, 10]} />
     </group>
   );
 }
