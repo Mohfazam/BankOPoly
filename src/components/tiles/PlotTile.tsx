@@ -8,7 +8,7 @@ interface PlotTileProps {
   id: number;
 }
 
-export function PlotTile({ position, id }: PlotTileProps) {
+export function PlotTile({ position }: PlotTileProps) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);

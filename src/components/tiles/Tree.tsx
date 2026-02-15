@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+
 
 interface TreeProps {
   position: [number, number, number];

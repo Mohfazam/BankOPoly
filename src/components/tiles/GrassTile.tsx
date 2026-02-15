@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+
 
 interface GrassTileProps {
   position: [number, number, number];

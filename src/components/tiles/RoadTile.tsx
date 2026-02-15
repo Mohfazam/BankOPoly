@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+
 
 interface RoadTileProps {
   position: [number, number, number];

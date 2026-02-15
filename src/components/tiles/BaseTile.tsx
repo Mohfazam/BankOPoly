@@ -10,8 +10,6 @@ export interface BaseTileProps {
 }
 
 export const BaseTile = ({
-  position,
-  size = 3.95,
   onHover,
   interactive = false,
 }: BaseTileProps) => {
