@@ -1,6 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { RoundedBox, Environment } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface DiceProps {
@@ -8,91 +7,191 @@ interface DiceProps {
   diceValue: number;
 }
 
-function DiceMesh({ isRolling, targetValue }: { isRolling: boolean; targetValue: number }) {
-  const meshRef = useRef<THREE.Group>(null);
-  const velocityRef = useRef({ x: 0.5, y: 0.5, z: 0.5 });
+function DiceMesh({ isRolling, value }: { isRolling: boolean; value: number }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const targetRotRef = useRef<THREE.Euler>(new THREE.Euler(0, 0, 0));
 
   useFrame((state, delta) => {
-    if (!meshRef.current) return;
+    if (!groupRef.current) return;
 
     if (isRolling) {
-      // Wild spinning
-      meshRef.current.rotation.x += velocityRef.current.x * delta * 12;
-      meshRef.current.rotation.y += velocityRef.current.y * delta * 12;
-      meshRef.current.rotation.z += velocityRef.current.z * delta * 12;
-      
-      // Bounce
-      meshRef.current.position.y = Math.abs(Math.sin(state.clock.elapsedTime * 8)) * 1.5;
+      groupRef.current.rotation.x += delta * 18;
+      groupRef.current.rotation.y += delta * 15;
+      groupRef.current.rotation.z += delta * 12;
+      groupRef.current.position.y = Math.abs(Math.sin(state.clock.elapsedTime * 10)) * 0.6;
     } else {
-      // Settle to show number
-      const target = getFaceRotation(targetValue);
-      meshRef.current.rotation.x += (target.x - meshRef.current.rotation.x) * 0.12;
-      meshRef.current.rotation.y += (target.y - meshRef.current.rotation.y) * 0.12;
-      meshRef.current.rotation.z += (target.z - meshRef.current.rotation.z) * 0.12;
-      meshRef.current.position.y += (0 - meshRef.current.position.y) * 0.15;
+      // Smoothly interpolate to target rotation
+      groupRef.current.rotation.x += (targetRotRef.current.x - groupRef.current.rotation.x) * 0.12;
+      groupRef.current.rotation.y += (targetRotRef.current.y - groupRef.current.rotation.y) * 0.12;
+      groupRef.current.rotation.z += (targetRotRef.current.z - groupRef.current.rotation.z) * 0.12;
+      groupRef.current.position.y += (0 - groupRef.current.position.y) * 0.12;
     }
   });
 
-  const getFaceRotation = (value: number) => {
-    const rots = {
-      1: { x: 0, y: 0, z: 0 },
-      2: { x: 0, y: -Math.PI / 2, z: 0 },
-      3: { x: -Math.PI / 2, y: 0, z: 0 },
-      4: { x: Math.PI / 2, y: 0, z: 0 },
-      5: { x: 0, y: Math.PI / 2, z: 0 },
-      6: { x: Math.PI, y: 0, z: 0 },
+  // Set target rotation when value changes
+  useEffect(() => {
+    // Standard dice: opposite faces sum to 7
+    // 1-6, 2-5, 3-4
+    const rotations: { [key: number]: [number, number, number] } = {
+      1: [0, 0, 0],                    // 1 facing front
+      2: [0, -Math.PI / 2, 0],         // 2 facing front  
+      3: [0, 0, -Math.PI / 2],         // 3 facing front
+      4: [0, 0, Math.PI / 2],          // 4 facing front
+      5: [0, Math.PI / 2, 0],          // 5 facing front
+      6: [0, Math.PI, 0],              // 6 facing front
     };
-    return rots[value as keyof typeof rots] || rots[1];
-  };
+    
+    const [x, y, z] = rotations[value] || rotations[1];
+    targetRotRef.current = new THREE.Euler(x, y, z);
+  }, [value]);
 
-  const createDot = (face: number, positions: number[][]) => {
-    return positions.map((pos, i) => {
-      let position: [number, number, number];
-      let rotation: [number, number, number] = [0, 0, 0];
+  // Create dice geometry with dots
+  const createDice = () => {
+    const size = 1.8;
+    const radius = 0.15;
+    const dotSize = 0.12;
+    const dotDepth = 0.08;
+    const offset = 0.45;
 
-      switch (face) {
-        case 1: position = [pos[0], pos[1], 1.02]; break;
-        case 2: position = [1.02, pos[1], -pos[0]]; rotation = [0, Math.PI / 2, 0]; break;
-        case 3: position = [pos[0], 1.02, pos[1]]; rotation = [-Math.PI / 2, 0, 0]; break;
-        case 4: position = [pos[0], -1.02, -pos[1]]; rotation = [Math.PI / 2, 0, 0]; break;
-        case 5: position = [-1.02, pos[1], pos[0]]; rotation = [0, -Math.PI / 2, 0]; break;
-        case 6: position = [-pos[0], pos[1], -1.02]; rotation = [0, Math.PI, 0]; break;
-        default: position = [0, 0, 0];
-      }
+    // Create rounded cube
+    const shape = new THREE.Shape();
+    const x = -size / 2;
+    const y = -size / 2;
+    const width = size;
+    const height = size;
 
-      return (
-        <mesh key={`${face}-${i}`} position={position} rotation={rotation}>
-          <sphereGeometry args={[0.14, 16, 16]} />
-          <meshStandardMaterial color="#1e293b" roughness={0.3} metalness={0.2} />
+    shape.moveTo(x + radius, y);
+    shape.lineTo(x + width - radius, y);
+    shape.quadraticCurveTo(x + width, y, x + width, y + radius);
+    shape.lineTo(x + width, y + height - radius);
+    shape.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    shape.lineTo(x + radius, y + height);
+    shape.quadraticCurveTo(x, y + height, x, y + height - radius);
+    shape.lineTo(x, y + radius);
+    shape.quadraticCurveTo(x, y, x + radius, y);
+
+    const extrudeSettings = {
+      depth: size,
+      bevelEnabled: true,
+      bevelThickness: radius,
+      bevelSize: radius,
+      bevelSegments: 8,
+    };
+
+    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    geometry.center();
+
+    return (
+      <>
+        <mesh geometry={geometry}>
+          <meshStandardMaterial color="#ffffff" roughness={0.3} metalness={0.1} />
         </mesh>
-      );
-    });
+
+        {/* Face 1: One dot in center (front) */}
+        <mesh position={[0, 0, size / 2 + dotDepth / 2]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+
+        {/* Face 2: Two dots diagonal (right) */}
+        <mesh position={[size / 2 + dotDepth / 2, offset, -offset]} rotation={[0, Math.PI / 2, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[size / 2 + dotDepth / 2, -offset, offset]} rotation={[0, Math.PI / 2, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+
+        {/* Face 3: Three dots diagonal (top) */}
+        <mesh position={[-offset, size / 2 + dotDepth / 2, offset]} rotation={[-Math.PI / 2, 0, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[0, size / 2 + dotDepth / 2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[offset, size / 2 + dotDepth / 2, -offset]} rotation={[-Math.PI / 2, 0, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+
+        {/* Face 4: Four dots in corners (bottom) */}
+        <mesh position={[-offset, -size / 2 - dotDepth / 2, -offset]} rotation={[Math.PI / 2, 0, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[offset, -size / 2 - dotDepth / 2, -offset]} rotation={[Math.PI / 2, 0, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[-offset, -size / 2 - dotDepth / 2, offset]} rotation={[Math.PI / 2, 0, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[offset, -size / 2 - dotDepth / 2, offset]} rotation={[Math.PI / 2, 0, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+
+        {/* Face 5: Five dots (left) */}
+        <mesh position={[-size / 2 - dotDepth / 2, offset, offset]} rotation={[0, -Math.PI / 2, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[-size / 2 - dotDepth / 2, -offset, offset]} rotation={[0, -Math.PI / 2, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[-size / 2 - dotDepth / 2, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[-size / 2 - dotDepth / 2, offset, -offset]} rotation={[0, -Math.PI / 2, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[-size / 2 - dotDepth / 2, -offset, -offset]} rotation={[0, -Math.PI / 2, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+
+        {/* Face 6: Six dots (back) */}
+        <mesh position={[-offset, offset, -size / 2 - dotDepth / 2]} rotation={[0, Math.PI, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[offset, offset, -size / 2 - dotDepth / 2]} rotation={[0, Math.PI, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[-offset, 0, -size / 2 - dotDepth / 2]} rotation={[0, Math.PI, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[offset, 0, -size / 2 - dotDepth / 2]} rotation={[0, Math.PI, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[-offset, -offset, -size / 2 - dotDepth / 2]} rotation={[0, Math.PI, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+        <mesh position={[offset, -offset, -size / 2 - dotDepth / 2]} rotation={[0, Math.PI, 0]}>
+          <sphereGeometry args={[dotSize, 16, 16]} />
+          <meshStandardMaterial color="#000000" roughness={0.4} />
+        </mesh>
+      </>
+    );
   };
 
-  return (
-    <group ref={meshRef}>
-      <RoundedBox args={[2, 2, 2]} radius={0.2} smoothness={4} castShadow>
-        <meshStandardMaterial
-          color="#ffffff"
-          roughness={0.15}
-          metalness={0.1}
-          envMapIntensity={0.8}
-        />
-      </RoundedBox>
-
-      {createDot(1, [[0, 0]])}
-      {createDot(2, [[-0.5, 0.5], [0.5, -0.5]])}
-      {createDot(3, [[-0.5, 0.5], [0, 0], [0.5, -0.5]])}
-      {createDot(4, [[-0.5, 0.5], [0.5, 0.5], [-0.5, -0.5], [0.5, -0.5]])}
-      {createDot(5, [[-0.5, 0.5], [0.5, 0.5], [0, 0], [-0.5, -0.5], [0.5, -0.5]])}
-      {createDot(6, [[-0.5, 0.6], [0.5, 0.6], [-0.5, 0], [0.5, 0], [-0.5, -0.6], [0.5, -0.6]])}
-    </group>
-  );
+  return <group ref={groupRef}>{createDice()}</group>;
 }
 
 export default function Dice({ onRoll, diceValue }: DiceProps) {
   const [rolling, setRolling] = useState(false);
-  const [currentValue, setCurrentValue] = useState(diceValue || 6);
+  const [value, setValue] = useState(diceValue || 1);
 
   const handleRoll = () => {
     if (rolling) return;
@@ -100,155 +199,69 @@ export default function Dice({ onRoll, diceValue }: DiceProps) {
 
     setTimeout(() => {
       const result = Math.floor(Math.random() * 6) + 1;
-      setCurrentValue(result);
+      setValue(result);
       onRoll(result);
       setTimeout(() => setRolling(false), 800);
     }, 400);
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0px' }}>
-      {/* Dice Canvas */}
-      <div style={{ position: 'relative', width: '200px', height: '200px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+      <div style={{ position: 'relative', width: '180px', height: '180px' }}>
         <div style={{
           width: '100%',
           height: '100%',
-          borderRadius: '24px',
-          overflow: 'hidden',
+          borderRadius: '20px',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: rolling 
-            ? '0 8px 32px rgba(102, 126, 234, 0.4), 0 0 0 4px rgba(255, 215, 0, 0.5)'
-            : '0 8px 24px rgba(102, 126, 234, 0.3)',
-          transition: 'all 0.3s ease',
+          boxShadow: '0 10px 40px rgba(102, 126, 234, 0.4)',
+          overflow: 'hidden',
         }}>
-          <Canvas
-            camera={{ position: [0, 3, 7], fov: 30 }}
-            shadows
-            dpr={[1, 2]}
-          >
+          <Canvas camera={{ position: [0, 2, 5], fov: 35 }} shadows>
             <color attach="background" args={['#8b5cf6']} />
             <ambientLight intensity={0.6} />
-            <directionalLight position={[8, 10, 5]} intensity={1.5} castShadow />
-            <pointLight position={[-5, 5, -3]} intensity={0.4} color="#fbbf24" />
-            
-            <DiceMesh isRolling={rolling} targetValue={currentValue} />
-            <Environment preset="sunset" />
+            <directionalLight position={[5, 5, 5]} intensity={1.2} castShadow />
+            <DiceMesh isRolling={rolling} value={value} />
           </Canvas>
         </div>
 
-        {/* Result badge */}
         {!rolling && (
           <div style={{
             position: 'absolute',
-            bottom: '-16px',
+            bottom: '-12px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-            width: '48px',
-            height: '48px',
+            width: '40px',
+            height: '40px',
             borderRadius: '50%',
+            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(251, 191, 36, 0.5), 0 0 0 4px white',
-            border: '3px solid white',
+            boxShadow: '0 4px 12px rgba(251, 191, 36, 0.4), 0 0 0 3px white',
           }}>
-            <span style={{
-              fontSize: '24px',
-              fontWeight: '900',
-              color: 'white',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-            }}>
-              {currentValue}
-            </span>
+            <span style={{ fontSize: '20px', fontWeight: '900', color: 'white' }}>{value}</span>
           </div>
         )}
       </div>
 
-      {/* Roll Button */}
       <button
         onClick={handleRoll}
         disabled={rolling}
         style={{
-          marginTop: '32px',
-          padding: '16px 48px',
-          fontSize: '20px',
-          fontWeight: '800',
+          marginTop: '8px',
+          padding: '12px 32px',
+          fontSize: '16px',
+          fontWeight: '700',
           color: 'white',
-          background: rolling 
-            ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-            : 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+          background: rolling ? '#94a3b8' : 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
           border: 'none',
-          borderRadius: '16px',
+          borderRadius: '12px',
           cursor: rolling ? 'not-allowed' : 'pointer',
-          boxShadow: rolling 
-            ? '0 4px 12px rgba(107, 114, 128, 0.3)'
-            : '0 8px 24px rgba(59, 130, 246, 0.4)',
-          transform: rolling ? 'scale(0.95)' : 'scale(1)',
-          transition: 'all 0.2s ease',
-          outline: 'none',
-        }}
-        onMouseEnter={(e) => {
-          if (!rolling) {
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 12px 32px rgba(59, 130, 246, 0.5)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!rolling) {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 8px 24px rgba(59, 130, 246, 0.4)';
-          }
-        }}
-        onMouseDown={(e) => {
-          if (!rolling) {
-            e.currentTarget.style.transform = 'scale(0.98)';
-          }
-        }}
-        onMouseUp={(e) => {
-          if (!rolling) {
-            e.currentTarget.style.transform = 'scale(1.05)';
-          }
+          boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
         }}
       >
-        {rolling ? (
-          <span style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
-            <svg 
-              style={{ 
-                animation: 'spin 1s linear infinite',
-                width: '24px',
-                height: '24px',
-              }} 
-              viewBox="0 0 24 24"
-            >
-              <circle 
-                style={{ opacity: 0.25 }} 
-                cx="12" 
-                cy="12" 
-                r="10" 
-                stroke="currentColor" 
-                strokeWidth="4" 
-                fill="none" 
-              />
-              <path 
-                style={{ opacity: 0.75 }} 
-                fill="currentColor" 
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" 
-              />
-            </svg>
-            Rolling...
-          </span>
-        ) : (
-          '🎲 Roll Dice'
-        )}
+        {rolling ? 'Rolling...' : '🎲 Roll'}
       </button>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }
