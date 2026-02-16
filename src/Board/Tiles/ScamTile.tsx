@@ -12,13 +12,7 @@ interface ScamTileProps {
 
 export default function ScamTile({
   coins,
-  savings,
-  loanActive,
-  loanRemaining,
   setCoins,
-  setSavings,
-  setLoanActive,
-  setLoanRemaining,
   closeModal,
 }: ScamTileProps) {
   const handleShareOTP = () => {

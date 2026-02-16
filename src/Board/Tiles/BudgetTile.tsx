@@ -13,12 +13,8 @@ interface BudgetTileProps {
 export default function BudgetTile({
   coins,
   savings,
-  loanActive,
-  loanRemaining,
   setCoins,
   setSavings,
-  setLoanActive,
-  setLoanRemaining,
   closeModal,
 }: BudgetTileProps) {
   const handleBuyToy = () => {

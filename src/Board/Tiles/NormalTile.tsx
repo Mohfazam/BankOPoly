@@ -2,7 +2,7 @@ interface NormalTileProps {
   closeModal: () => void;
 }
 
-export default function NormalTile({ closeModal }: NormalTileProps) {
+export default function NormalTile({  }: NormalTileProps) {
   return (
     <div className="text-center">
       <div className="text-6xl mb-4">➡️</div>

@@ -2,7 +2,7 @@ interface StartTileProps {
   closeModal: () => void;
 }
 
-export default function StartTile({ closeModal }: StartTileProps) {
+export default function StartTile({  }: StartTileProps) {
   return (
     <div className="text-center">
       <div className="text-6xl mb-4">🏁</div>

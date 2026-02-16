@@ -12,11 +12,8 @@ interface PropertyTileProps {
 
 export default function PropertyTile({
   coins,
-  savings,
   loanActive,
-  loanRemaining,
   setCoins,
-  setSavings,
   setLoanActive,
   setLoanRemaining,
   closeModal,

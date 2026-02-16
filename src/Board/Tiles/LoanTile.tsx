@@ -12,11 +12,8 @@ interface LoanTileProps {
 
 export default function LoanTile({
   coins,
-  savings,
   loanActive,
-  loanRemaining,
   setCoins,
-  setSavings,
   setLoanActive,
   setLoanRemaining,
   closeModal,

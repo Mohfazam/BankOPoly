@@ -132,7 +132,7 @@ export default function BoardGame() {
   const leftColumn = [18, 19, 20, 21, 22, 23]; // Left (bottom to top)
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="w-full min-h-screen bg-linear-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background stars */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-10 left-20 w-3 h-3 bg-yellow-300 rounded-full animate-pulse"></div>
@@ -144,7 +144,7 @@ export default function BoardGame() {
       <div className="relative z-10 w-full max-w-7xl">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 mb-3 drop-shadow-lg">
+          <h1 className="text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-yellow-300 via-pink-300 to-purple-300 mb-3 drop-shadow-lg">
             💰 Financial Journey 💰
           </h1>
           <p className="text-white text-lg font-semibold drop-shadow">Master money management through play!</p>
@@ -153,7 +153,7 @@ export default function BoardGame() {
         {/* Stats Bar */}
         <div className="flex justify-center items-center mb-8 gap-4 flex-wrap px-4">
           {/* Coins */}
-          <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl px-6 py-3 shadow-2xl border-4 border-yellow-200 transform hover:scale-105 transition-all">
+          <div className="bg-linear-to-br from-yellow-400 to-yellow-600 rounded-2xl px-6 py-3 shadow-2xl border-4 border-yellow-200 transform hover:scale-105 transition-all">
             <div className="flex items-center gap-3">
               <div className="text-4xl">💰</div>
               <div>
@@ -164,7 +164,7 @@ export default function BoardGame() {
           </div>
 
           {/* Savings */}
-          <div className="bg-gradient-to-br from-green-400 to-green-600 rounded-2xl px-6 py-3 shadow-2xl border-4 border-green-200 transform hover:scale-105 transition-all">
+          <div className="bg-linear-to-br from-green-400 to-green-600 rounded-2xl px-6 py-3 shadow-2xl border-4 border-green-200 transform hover:scale-105 transition-all">
             <div className="flex items-center gap-3">
               <div className="text-4xl">🏦</div>
               <div>
@@ -175,7 +175,7 @@ export default function BoardGame() {
           </div>
 
           {/* Position */}
-          <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl px-6 py-3 shadow-2xl border-4 border-blue-200 transform hover:scale-105 transition-all">
+          <div className="bg-linear-to-br from-blue-400 to-blue-600 rounded-2xl px-6 py-3 shadow-2xl border-4 border-blue-200 transform hover:scale-105 transition-all">
             <div className="flex items-center gap-3">
               <div className="text-4xl">📍</div>
               <div>
@@ -187,7 +187,7 @@ export default function BoardGame() {
 
           {/* Loan (if active) */}
           {loanActive && (
-            <div className="bg-gradient-to-br from-red-400 to-red-600 rounded-2xl px-6 py-3 shadow-2xl border-4 border-red-200 transform hover:scale-105 transition-all animate-pulse">
+            <div className="bg-linear-to-br from-red-400 to-red-600 rounded-2xl px-6 py-3 shadow-2xl border-4 border-red-200 transform hover:scale-105 transition-all animate-pulse">
               <div className="flex items-center gap-3">
                 <div className="text-4xl">⚠️</div>
                 <div>
@@ -203,7 +203,7 @@ export default function BoardGame() {
         <div className="flex justify-center">
           <div className="relative">
             {/* Board Container */}
-            <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-3xl shadow-2xl border-8 border-amber-800 p-6">
+            <div className="bg-linear-to-br from-amber-100 to-amber-200 rounded-3xl shadow-2xl border-8 border-amber-800 p-6">
               {/* 6x6 Grid - outer ring only (hollow center) */}
               <div className="grid grid-cols-6 gap-2">
                 {/* TOP ROW - all 6 tiles */}
@@ -239,7 +239,7 @@ export default function BoardGame() {
 
               {/* CENTER DICE - Absolutely positioned in the hollow center */}
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
-                <div className="bg-gradient-to-br from-yellow-300 via-orange-300 to-red-300 rounded-3xl p-6 shadow-2xl border-8 border-yellow-600">
+                <div className="bg-linear-to-br from-yellow-300 via-orange-300 to-red-300 rounded-3xl p-6 shadow-2xl border-8 border-yellow-600">
                   <Dice onRoll={handleRoll} diceValue={diceValue} />
                 </div>
               </div>
@@ -263,13 +263,13 @@ export default function BoardGame() {
         {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-gradient-to-br from-white via-gray-50 to-gray-100 rounded-3xl p-8 max-w-md w-full shadow-2xl border-8 border-gray-800 max-h-[85vh] overflow-y-auto transform animate-scaleIn">
+            <div className="bg-linear-to-br from-white via-gray-50 to-gray-100 rounded-3xl p-8 max-w-md w-full shadow-2xl border-8 border-gray-800 max-h-[85vh] overflow-y-auto transform animate-scaleIn">
               <div className="mb-6">
                 {getTileComponent()}
               </div>
               <button
                 onClick={closeModal}
-                className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-black text-xl rounded-2xl hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transition-all shadow-lg transform hover:scale-105 active:scale-95 border-4 border-white"
+                className="w-full px-6 py-4 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 text-white font-black text-xl rounded-2xl hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 transition-all shadow-lg transform hover:scale-105 active:scale-95 border-4 border-white"
               >
                 Continue Journey →
               </button>
@@ -304,7 +304,7 @@ function BoardTile({ tile, isActive }: { tile: TileData; isActive: boolean }) {
 
   return (
     <div 
-      className={`relative bg-gradient-to-br ${config.gradient} border-4 ${config.border} rounded-xl w-20 h-20 flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-110 hover:rotate-3 ${config.shadow} shadow-xl ${
+      className={`relative bg-linear-to-br ${config.gradient} border-4 ${config.border} rounded-xl w-20 h-20 flex flex-col items-center justify-center cursor-pointer transition-all transform hover:scale-110 hover:rotate-3 ${config.shadow} shadow-xl ${
         isActive ? 'ring-8 ring-white ring-opacity-80 scale-105 animate-wiggle' : ''
       }`}
     >
@@ -323,8 +323,8 @@ function BoardTile({ tile, isActive }: { tile: TileData; isActive: boolean }) {
             {/* Token shadow */}
             <div className="absolute inset-0 bg-black opacity-30 rounded-full blur-md transform translate-y-1"></div>
             {/* Token body */}
-            <div className="relative w-12 h-12 bg-gradient-to-br from-red-400 to-red-600 rounded-full border-4 border-white shadow-2xl flex items-center justify-center animate-bounce">
-              <div className="w-8 h-8 bg-gradient-to-br from-red-300 to-red-500 rounded-full border-2 border-red-700 flex items-center justify-center">
+            <div className="relative w-12 h-12 bg-linear-to-br from-red-400 to-red-600 rounded-full border-4 border-white shadow-2xl flex items-center justify-center animate-bounce">
+              <div className="w-8 h-8 bg-linear-to-br from-red-300 to-red-500 rounded-full border-2 border-red-700 flex items-center justify-center">
                 <div className="text-xl">👤</div>
               </div>
             </div>

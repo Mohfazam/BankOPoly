@@ -11,14 +11,8 @@ interface InterestTileProps {
 }
 
 export default function InterestTile({
-  coins,
   savings,
-  loanActive,
-  loanRemaining,
-  setCoins,
   setSavings,
-  setLoanActive,
-  setLoanRemaining,
   closeModal,
 }: InterestTileProps) {
   const handleCollect = () => {

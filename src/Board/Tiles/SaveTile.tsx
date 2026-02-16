@@ -13,12 +13,8 @@ interface SaveTileProps {
 export default function SaveTile({
   coins,
   savings,
-  loanActive,
-  loanRemaining,
   setCoins,
   setSavings,
-  setLoanActive,
-  setLoanRemaining,
   closeModal,
 }: SaveTileProps) {
   const handleDeposit = () => {
