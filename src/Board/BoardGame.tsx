@@ -32,28 +32,22 @@ function useSound() {
       };
 
       if (type === 'roll') {
-        // Rattling dice sound
         for (let i = 0; i < 6; i++) osc(120 + Math.random() * 200, i * 0.08, 0.07, 0.15, 'square');
       } else if (type === 'coin') {
-        // Happy coin collect ding
         osc(880, 0, 0.12, 0.2); osc(1100, 0.1, 0.15, 0.15); osc(1320, 0.2, 0.2, 0.12);
       } else if (type === 'scam') {
-        // Harsh buzzer
         osc(180, 0, 0.3, 0.3, 'sawtooth'); osc(160, 0.15, 0.3, 0.25, 'sawtooth');
       } else if (type === 'buy') {
-        // Satisfying purchase pop
         osc(440, 0, 0.08, 0.2); osc(554, 0.06, 0.08, 0.18); osc(659, 0.12, 0.15, 0.15); osc(880, 0.2, 0.2, 0.12);
       } else if (type === 'sad') {
-        // Descending sad tone
         const o = ac.createOscillator(); const g = ac.createGain();
         o.type = 'sine'; o.frequency.setValueAtTime(440, now); o.frequency.linearRampToValueAtTime(220, now + 0.4);
         g.gain.setValueAtTime(0.2, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
         o.connect(g); g.connect(ac.destination); o.start(now); o.stop(now + 0.5);
       } else if (type === 'cheer') {
-        // Win fanfare
         [523, 659, 784, 1047].forEach((f, i) => osc(f, i * 0.12, 0.2, 0.18));
       }
-    } catch (_) { /* silently ignore if audio blocked */ }
+    } catch (_) {}
   }, []);
 
   return play;
@@ -107,7 +101,6 @@ const RIGHT: number[] = [5, 6, 7, 8, 9];
 const BOT:   number[] = [14, 13, 12, 11, 10];
 const LEFT:  number[] = [19, 18, 17, 16, 15];
 
-// Clean, flat color palette — no gradients
 const COLORS: Record<TileType, { bg: string; border: string; text: string; strip: string }> = {
   start:    { bg: '#dcfce7', border: '#16a34a', text: '#15803d', strip: '#16a34a' },
   save:     { bg: '#dbeafe', border: '#2563eb', text: '#1e40af', strip: '#2563eb' },
@@ -175,11 +168,7 @@ function Dice({ value, rolling }: { value: number; rolling: boolean }) {
       {dots.map((on, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {on && (
-            <div style={{
-              width: 10, height: 10,
-              borderRadius: '50%',
-              background: '#1e293b',
-            }} />
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#1e293b' }} />
           )}
         </div>
       ))}
@@ -414,7 +403,7 @@ function HowToPlay({ onClose }: { onClose: () => void }) {
   const steps = [
     { icon: '🎲', title: 'Roll the Dice',   desc: `Click GO or the dice to roll and move around the board!` },
     { icon: '🏁', title: 'Collect Salary',  desc: `Pass GO and collect ₹${GO_SALARY} ZenCoins — your paycheck!` },
-    { icon: '🏦', title: 'Save Money',      desc: 'Land on SAVE tiles to put ₹50 in your savings account.' },
+    { icon: '🏦', title: 'Save Money',      desc: 'Land on SAVE tiles to put coins in your savings account.' },
     { icon: '💰', title: 'Earn Interest',   desc: 'Land on EARN — get 10% bonus on your total savings! Free money!' },
     { icon: '🏠', title: 'Buy Properties',  desc: 'Own properties and collect rent when you land on them again.' },
     { icon: '⚠️', title: 'Avoid Scams',    desc: 'SCAM tiles: never share OTPs! Ignore and earn ₹50 reward. 🎉' },
@@ -511,6 +500,10 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
   const c = COLORS[tile.type];
   const isOwned = ownedTiles.includes(tile.id);
 
+  // save amount selection — lifted to Modal scope so it works cleanly
+  const [selectedSave, setSelectedSave] = useState(50);
+  const [customSaveStr, setCustomSaveStr] = useState('');
+
   const Btn = ({ onClick, disabled = false, bg, shadow, children }: { onClick: () => void; disabled?: boolean; bg: string; shadow: string; children: React.ReactNode }) => (
     <button onClick={() => { if (disabled) { onWalletShake(); return; } onClick(); }} style={{ flex: 1, padding: '11px 8px', borderRadius: 14, border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', background: disabled ? '#e2e8f0' : bg, color: disabled ? '#94a3b8' : 'white', fontWeight: 900, fontSize: 14, boxShadow: disabled ? 'none' : `0 4px 0 ${shadow}`, fontFamily: '"Nunito", system-ui', transition: 'all 0.1s', lineHeight: 1.4 }}>{children}</button>
   );
@@ -548,20 +541,74 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
           </>
         );
 
-      case 'save':
+      case 'save': {
+        const customSaveInvalid = customSaveStr !== '' && (isNaN(parseInt(customSaveStr, 10)) || parseInt(customSaveStr, 10) <= 0);
+        const effectiveSave = customSaveStr !== '' && !customSaveInvalid ? parseInt(customSaveStr, 10) : selectedSave;
         return (
           <>
-            <p style={pStyle}>Put <strong>₹50 ZenCoins</strong> in your savings! Savings earn 10% interest on EARN tiles — that&apos;s free money!</p>
+            {/* what is savings? — child-friendly explainer */}
+            <div style={{ background: '#eff6ff', border: '2px solid #bfdbfe', borderRadius: 12, padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>🏦</span>
+              <div style={{ fontSize: 12, color: '#1e40af', fontWeight: 700, lineHeight: 1.6 }}>
+                <strong>What is a Savings Account?</strong><br />
+                It's like a piggy bank at the bank that earns extra money (called <em>interest</em>) just for keeping it there! The more you save, the more you earn — without doing anything!
+              </div>
+            </div>
+            <p style={pStyle}>Move coins from your wallet into savings. They&apos;ll earn <strong>10% interest</strong> every time you land on an EARN tile!</p>
             <Box>
-              <Info l="Your wallet" v={`₹${coins}`} />
-              <Info l="In savings"  v={`₹${savings}`} />
-              {coins >= 50 && <Info l="After saving" v={`₹${coins-50} wallet · ₹${savings+50} saved`} color="#2563eb" />}
+              <Info l="💰 Your wallet" v={`₹${coins}`} />
+              <Info l="🏦 In savings"  v={`₹${savings}`} />
+              {coins >= effectiveSave && effectiveSave > 0 && <Info l="✅ After saving" v={`₹${coins - effectiveSave} wallet · ₹${savings + effectiveSave} saved`} color="#2563eb" />}
             </Box>
-            <Btn onClick={() => { if (coins >= 50) { setCoins(coins-50); setSavings(savings+50); } onClose(); }} disabled={coins < 50} bg="#2563eb" shadow="#1e40af">
-              {coins >= 50 ? 'Save ₹50! 🏦' : 'Need ₹50 to save!'}
+            {/* preset chips */}
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Quick amounts:</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
+              {[50, 100, 500, 1000].map(amt => (
+                <button
+                  key={amt}
+                  onClick={() => { setSelectedSave(amt); setCustomSaveStr(''); }}
+                  style={{
+                    padding: '10px 4px',
+                    borderRadius: 10,
+                    border: `2px solid ${selectedSave === amt && customSaveStr === '' ? '#2563eb' : '#e2e8f0'}`,
+                    cursor: 'pointer',
+                    background: selectedSave === amt && customSaveStr === '' ? '#dbeafe' : 'white',
+                    color: selectedSave === amt && customSaveStr === '' ? '#1e40af' : '#64748b',
+                    fontWeight: 900, fontSize: 13,
+                    fontFamily: '"Nunito", system-ui', transition: 'all 0.15s',
+                  }}
+                >
+                  ₹{amt}
+                </button>
+              ))}
+            </div>
+            {/* custom input */}
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Or type your own amount:</div>
+            <input
+              type="number"
+              placeholder={`Max ₹${coins} (your wallet)`}
+              value={customSaveStr}
+              onChange={e => { setCustomSaveStr(e.target.value); setSelectedSave(0); }}
+              style={{ width: '100%', boxSizing: 'border-box', background: '#f8fafc', border: `2px solid ${customSaveInvalid ? '#fca5a5' : customSaveStr ? '#2563eb' : '#e2e8f0'}`, borderRadius: 10, padding: '10px 14px', color: '#0f172a', fontSize: 14, fontWeight: 700, outline: 'none', fontFamily: '"Nunito", system-ui', marginBottom: 4 }}
+            />
+            {customSaveInvalid && <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 800, marginBottom: 8 }}>⚠️ Enter a number bigger than 0!</div>}
+            {!customSaveInvalid && customSaveStr !== '' && parseInt(customSaveStr,10) > coins && <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 800, marginBottom: 8 }}>⚠️ You only have ₹{coins} in your wallet!</div>}
+            <div style={{ marginBottom: 14 }} />
+            <Btn
+              onClick={() => {
+                const amt = effectiveSave;
+                if (amt > 0 && coins >= amt) { setCoins(coins - amt); setSavings(savings + amt); }
+                onClose();
+              }}
+              disabled={effectiveSave <= 0 || coins < effectiveSave || customSaveInvalid}
+              bg="#2563eb"
+              shadow="#1e40af"
+            >
+              {coins >= effectiveSave && effectiveSave > 0 ? `Save ₹${effectiveSave}! 🏦` : effectiveSave > coins ? `Not enough coins! 😅` : `Pick an amount first`}
             </Btn>
           </>
         );
+      }
 
       case 'interest': {
         const bonus = Math.floor(savings * 0.1);
@@ -609,19 +656,54 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
       case 'budget':
         return (
           <>
-            <p style={pStyle}>Time to make a choice! Every rupee you spend is a rupee you can&apos;t save or invest.</p>
-            <Box><Info l="Your wallet" v={`₹${coins}`} /></Box>
-            <div style={{ background: '#f0fdf4', border: '2px solid #86efac', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 12, color: '#166534', fontWeight: 700, textAlign: 'center' }}>
-              💡 Need vs Want: Saving for school = need. New gadget = want!
+            <p style={pStyle}>Time to make a smart money choice! Every rupee you spend wisely today helps you grow richer tomorrow. 💪</p>
+            <div style={{ background: '#f0fdf4', border: '2px solid #86efac', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 12, color: '#166534', fontWeight: 700, lineHeight: 1.6 }}>
+              💡 <strong>Need vs Want:</strong> A need is something you must have (food, books, medicine). A want is something nice but you can live without (new games, fancy shoes). Always pay for needs first!
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Btn onClick={() => { if (coins >= 100) setCoins(coins-100); onClose(); }} disabled={coins < 100} bg="#ea580c" shadow="#c2410c">
-                🚲 New Bike<br /><span style={{ fontSize: 11 }}>₹100 (Want)</span>
-              </Btn>
-              <Btn onClick={() => { setSavings(savings+50); onClose(); }} bg="#9333ea" shadow="#7e22ce">
-                📚 Save for School<br /><span style={{ fontSize: 11 }}>+₹50 Saved!</span>
-              </Btn>
-            </div>
+            <Box>
+              <Info l="👛 Your wallet" v={`₹${coins}`} color={coins < 100 ? '#dc2626' : '#0f172a'} />
+              <Info l="🏦 Your savings" v={`₹${savings}`} color="#2563eb" />
+            </Box>
+            {/* Normal choice — can afford bike */}
+            {coins >= 100 && (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Btn onClick={() => { setCoins(coins-100); onClose(); }} bg="#ea580c" shadow="#c2410c">
+                  🚲 New Bike<br /><span style={{ fontSize: 11 }}>₹100 (Want)</span>
+                </Btn>
+                <Btn onClick={() => { setSavings(savings+50); onClose(); }} bg="#9333ea" shadow="#7e22ce">
+                  📚 Save for School<br /><span style={{ fontSize: 11 }}>+₹50 Saved!</span>
+                </Btn>
+              </div>
+            )}
+            {/* Short on cash — teach them they can use savings or skip */}
+            {coins < 100 && (
+              <>
+                <div style={{ background: '#fef9c3', border: '2px solid #fbbf24', borderRadius: 12, padding: '10px 14px', marginBottom: 12 }}>
+                  <div style={{ fontWeight: 900, fontSize: 13, color: '#92400e', marginBottom: 4 }}>😅 You don&apos;t have ₹100 in your wallet for the bike!</div>
+                  <div style={{ fontSize: 12, color: '#78350f', fontWeight: 600, lineHeight: 1.6 }}>
+                    This is actually a great life lesson — sometimes we can&apos;t afford what we <em>want</em>. You have options:
+                  </div>
+                </div>
+                {/* Use savings option */}
+                <div style={{ background: '#eff6ff', border: `2px solid ${savings >= 100 ? '#2563eb' : '#bfdbfe'}`, borderRadius: 14, padding: '12px 14px', marginBottom: 10 }}>
+                  <div style={{ fontWeight: 900, fontSize: 13, color: '#1e40af', marginBottom: 4 }}>🏦 Option 1 — Use Your Savings (Free!)</div>
+                  <div style={{ fontSize: 12, color: '#1e40af', fontWeight: 600, lineHeight: 1.6, marginBottom: 10 }}>
+                    You have <strong>₹{savings}</strong> saved. You could withdraw ₹100 to buy the bike — but is a new bike worth dipping into your savings? Think about it! 🤔
+                  </div>
+                  {savings >= 100 ? (
+                    <button onClick={() => { setSavings(savings-100); onClose(); }} style={{ width: '100%', padding: '10px', borderRadius: 12, border: 'none', cursor: 'pointer', background: '#2563eb', color: 'white', fontWeight: 900, fontSize: 13, fontFamily: '"Nunito", system-ui', boxShadow: '0 4px 0 #1e40af' }}>
+                      🏦 Withdraw from savings &amp; Buy Bike
+                    </button>
+                  ) : (
+                    <div style={{ fontSize: 12, color: '#3b82f6', fontWeight: 700, textAlign: 'center', background: '#dbeafe', borderRadius: 10, padding: '8px' }}>Not enough savings (₹{savings}) either!</div>
+                  )}
+                </div>
+                {/* Wise choice */}
+                <Btn onClick={() => { setSavings(savings+50); onClose(); }} bg="#9333ea" shadow="#7e22ce">
+                  📚 Smart move — Save for School instead!<br /><span style={{ fontSize: 11 }}>+₹50 into savings</span>
+                </Btn>
+              </>
+            )}
           </>
         );
 
@@ -642,41 +724,147 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
         }
         return (
           <>
-            <p style={pStyle}>Own <strong>{tile.label}</strong> and earn ₹{tile.rent} rent — even when you&apos;re not working! That&apos;s passive income!</p>
+            <p style={pStyle}>Own <strong>{tile.label}</strong> and earn ₹{tile.rent} rent every time you land here again — even without working! That&apos;s called <strong>passive income</strong>! 🎯</p>
             <Box>
-              <Info l="Buy for"    v={`₹${tile.price}`} />
-              <Info l="Rent"       v={`₹${tile.rent}/visit`} color="#16a34a" />
-              <Info l="Your coins" v={`₹${coins}`} />
-              {loanActive && <div style={{ fontSize: 11, color: '#dc2626', marginTop: 6, fontWeight: 700 }}>⚠️ You have an active loan! Owe ₹{loanRemaining}</div>}
+              <Info l="🏷️ Buy for"    v={`₹${tile.price}`} />
+              <Info l="💵 Rent earned" v={`₹${tile.rent}/visit`} color="#16a34a" />
+              <Info l="👛 Your wallet" v={`₹${coins}`} color={coins < tile.price ? '#dc2626' : '#0f172a'} />
+              <Info l="🏦 Your savings" v={`₹${savings}`} color="#2563eb" />
             </Box>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <Btn onClick={() => { if (coins >= tile.price) { setCoins(coins-tile.price); setOwnedTiles(prev => [...prev, tile.id]); } onClose(); }} disabled={coins < tile.price} bg="#ea580c" shadow="#c2410c">
-                🏠 Buy!<br /><span style={{ fontSize: 12 }}>₹{tile.price}</span>
-              </Btn>
-              <Btn onClick={() => { if (!loanActive) { setCoins(coins+LOAN_AMOUNT); setLoanActive(true); setLoanRemaining(LOAN_REPAY); } onClose(); }} disabled={loanActive} bg="#db2777" shadow="#be185d">
-                🏦 Get Loan<br /><span style={{ fontSize: 12 }}>₹{LOAN_AMOUNT} now</span>
-              </Btn>
-            </div>
-            <button onClick={onClose} style={{ width: '100%', marginTop: 10, padding: '12px', borderRadius: 12, border: '2px solid #e2e8f0', cursor: 'pointer', background: 'white', color: '#94a3b8', fontWeight: 800, fontSize: 13 }}>Skip for now →</button>
+
+            {/* Can afford with wallet — normal buy */}
+            {coins >= tile.price && (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <Btn onClick={() => { setCoins(coins-tile.price); setOwnedTiles(prev => [...prev, tile.id]); onClose(); }} bg="#ea580c" shadow="#c2410c">
+                  🏠 Buy now!<br /><span style={{ fontSize: 12 }}>₹{tile.price} from wallet</span>
+                </Btn>
+                <button onClick={onClose} style={{ flex: 1, padding: '11px 8px', borderRadius: 14, border: '2px solid #e2e8f0', cursor: 'pointer', background: 'white', color: '#94a3b8', fontWeight: 800, fontSize: 13 }}>Skip →</button>
+              </div>
+            )}
+
+            {/* Can't afford with wallet alone — show funding options */}
+            {coins < tile.price && (
+              <>
+                <div style={{ background: '#fef9c3', border: '2px solid #fbbf24', borderRadius: 12, padding: '10px 14px', marginBottom: 14 }}>
+                  <div style={{ fontWeight: 900, fontSize: 13, color: '#92400e', marginBottom: 4 }}>😅 Your wallet is a bit short! You need ₹{tile.price - coins} more.</div>
+                  <div style={{ fontSize: 12, color: '#78350f', fontWeight: 600, lineHeight: 1.6 }}>You have <strong>₹{coins}</strong> in your wallet. You can get extra money in two ways — read carefully and choose wisely!</div>
+                </div>
+
+                {/* Option 1 — Use Savings */}
+                <div style={{ background: '#eff6ff', border: `2px solid ${savings >= tile.price - coins ? '#2563eb' : '#bfdbfe'}`, borderRadius: 14, padding: '14px', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 22 }}>🏦</span>
+                    <div>
+                      <div style={{ fontWeight: 900, fontSize: 14, color: '#1e40af' }}>Option 1 — Use Your Savings</div>
+                      <div style={{ fontSize: 11, color: '#3b82f6', fontWeight: 700 }}>✅ FREE! No extra cost.</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#1e40af', fontWeight: 600, lineHeight: 1.6, marginBottom: 10 }}>
+                    Your savings account has <strong>₹{savings}</strong>. You can take money out to buy this. It&apos;s your own money — no extra charges! But remember: less savings = less interest earned later. 💡
+                  </div>
+                  {savings >= tile.price - coins ? (
+                    <button
+                      onClick={() => {
+                        const needed = tile.price - coins;
+                        setSavings(savings - needed);
+                        setCoins(0);
+                        setOwnedTiles(prev => [...prev, tile.id]);
+                        onClose();
+                      }}
+                      style={{ width: '100%', padding: '11px', borderRadius: 12, border: 'none', cursor: 'pointer', background: '#2563eb', color: 'white', fontWeight: 900, fontSize: 14, fontFamily: '"Nunito", system-ui', boxShadow: '0 4px 0 #1e40af' }}
+                    >
+                      🏦 Withdraw ₹{tile.price - coins} from savings &amp; Buy!
+                    </button>
+                  ) : (
+                    <div style={{ background: '#dbeafe', borderRadius: 10, padding: '9px 12px', fontSize: 12, color: '#1e40af', fontWeight: 700, textAlign: 'center' }}>
+                      Not enough savings (₹{savings}) — you need ₹{tile.price - coins} more.
+                    </div>
+                  )}
+                </div>
+
+                {/* Option 2 — Bank Loan */}
+                <div style={{ background: '#fdf4ff', border: `2px solid ${!loanActive ? '#d946ef' : '#e9d5ff'}`, borderRadius: 14, padding: '14px', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontSize: 22 }}>📋</span>
+                    <div>
+                      <div style={{ fontWeight: 900, fontSize: 14, color: '#86198f' }}>Option 2 — Bank Loan</div>
+                      <div style={{ fontSize: 11, color: '#d946ef', fontWeight: 700 }}>⚠️ You pay back MORE than you borrow!</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#86198f', fontWeight: 600, lineHeight: 1.6, marginBottom: 10 }}>
+                    The bank gives you <strong>₹{LOAN_AMOUNT}</strong> now, but when you pass GO, you must pay back <strong>₹{LOAN_REPAY}</strong> — that&apos;s ₹{LOAN_REPAY - LOAN_AMOUNT} extra as <em>interest</em>. Banks charge you for lending money. Only borrow if you really need to!
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, fontSize: 12, marginBottom: 10 }}>
+                    <div style={{ flex: 1, background: '#f0fdf4', border: '2px solid #86efac', borderRadius: 10, padding: '8px', textAlign: 'center' }}>
+                      <div style={{ fontWeight: 900, color: '#15803d' }}>You get</div>
+                      <div style={{ fontWeight: 900, fontSize: 16, color: '#15803d' }}>₹{LOAN_AMOUNT}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', fontSize: 18 }}>→</div>
+                    <div style={{ flex: 1, background: '#fee2e2', border: '2px solid #fca5a5', borderRadius: 10, padding: '8px', textAlign: 'center' }}>
+                      <div style={{ fontWeight: 900, color: '#b91c1c' }}>You repay</div>
+                      <div style={{ fontWeight: 900, fontSize: 16, color: '#b91c1c' }}>₹{LOAN_REPAY}</div>
+                    </div>
+                  </div>
+                  {loanActive ? (
+                    <div style={{ background: '#fee2e2', borderRadius: 10, padding: '9px 12px', fontSize: 12, color: '#b91c1c', fontWeight: 700, textAlign: 'center' }}>
+                      ⛔ You already have a loan! Pay it off first (₹{loanRemaining} owed).
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setCoins(coins + LOAN_AMOUNT); setLoanActive(true); setLoanRemaining(LOAN_REPAY); onClose(); }}
+                      style={{ width: '100%', padding: '11px', borderRadius: 12, border: 'none', cursor: 'pointer', background: '#d946ef', color: 'white', fontWeight: 900, fontSize: 14, fontFamily: '"Nunito", system-ui', boxShadow: '0 4px 0 #86198f' }}
+                    >
+                      📋 Take Loan of ₹{LOAN_AMOUNT} (repay ₹{LOAN_REPAY} later)
+                    </button>
+                  )}
+                </div>
+
+                <button onClick={onClose} style={{ width: '100%', padding: '12px', borderRadius: 12, border: '2px solid #e2e8f0', cursor: 'pointer', background: 'white', color: '#94a3b8', fontWeight: 800, fontSize: 13 }}>Skip for now →</button>
+              </>
+            )}
           </>
         );
 
       case 'loan':
         return (
           <>
-            <p style={pStyle}>Borrow ₹{LOAN_AMOUNT} now, but pay ₹{LOAN_REPAY} back at GO — that&apos;s ₹{LOAN_REPAY-LOAN_AMOUNT} extra as interest. Loans cost money!</p>
-            <Box>
-              <Info l="You receive"    v={`₹${LOAN_AMOUNT}`} color="#2563eb" />
-              <Info l="You pay back"   v={`₹${LOAN_REPAY}`} color="#dc2626" />
-              <Info l="Interest cost"  v={`₹${LOAN_REPAY-LOAN_AMOUNT}`} color="#dc2626" />
-              {loanActive && <div style={{ marginTop: 8, fontSize: 12, color: '#dc2626', fontWeight: 700 }}>⚠️ Already have a loan! Pay it off first.</div>}
-            </Box>
-            <div style={{ background: '#fef3c7', border: '2px solid #fbbf24', borderRadius: 10, padding: '10px 12px', marginBottom: 12, fontSize: 12, color: '#92400e', fontWeight: 700, textAlign: 'center' }}>
-              💡 Only borrow when you really need it! Interest adds up fast.
+            {/* What is a loan — child explainer */}
+            <div style={{ background: '#fdf4ff', border: '2px solid #e9d5ff', borderRadius: 12, padding: '10px 14px', marginBottom: 14, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>🏛️</span>
+              <div style={{ fontSize: 12, color: '#86198f', fontWeight: 700, lineHeight: 1.6 }}>
+                <strong>What is a Bank Loan?</strong><br />
+                A loan is when the bank lends you money, but you have to pay it all back PLUS extra money called <em>interest</em>. It&apos;s like borrowing ₹10 from a friend and having to give back ₹12 — the ₹2 extra is the interest charge!
+              </div>
             </div>
-            <Btn onClick={() => { if (!loanActive) { setCoins(coins+LOAN_AMOUNT); setLoanActive(true); setLoanRemaining(LOAN_REPAY); } onClose(); }} disabled={loanActive} bg="#db2777" shadow="#be185d">
-              {loanActive ? 'Already have loan! ⛔' : 'Borrow ₹100 💳'}
-            </Btn>
+            <p style={pStyle}>Think carefully! Loans help in emergencies but they always cost more than you borrowed.</p>
+            {/* Visual comparison */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14, alignItems: 'stretch' }}>
+              <div style={{ flex: 1, background: '#dcfce7', border: '2px solid #86efac', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#15803d', textTransform: 'uppercase', marginBottom: 4 }}>😊 You receive NOW</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#15803d' }}>₹{LOAN_AMOUNT}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', fontSize: 24, fontWeight: 900, color: '#94a3b8' }}>⇒</div>
+              <div style={{ flex: 1, background: '#fee2e2', border: '2px solid #fca5a5', borderRadius: 12, padding: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#b91c1c', textTransform: 'uppercase', marginBottom: 4 }}>😬 You repay at GO</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#b91c1c' }}>₹{LOAN_REPAY}</div>
+              </div>
+            </div>
+            <div style={{ background: '#fef3c7', border: '2px solid #fbbf24', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 12, color: '#92400e', fontWeight: 700, textAlign: 'center' }}>
+              📉 Interest cost = ₹{LOAN_REPAY - LOAN_AMOUNT} extra — that&apos;s money you lose! Only borrow when you REALLY need to.
+            </div>
+            <Box>
+              <Info l="👛 Your wallet now" v={`₹${coins}`} />
+              {loanActive && <Info l="⚠️ Current loan owed" v={`₹${loanRemaining}`} color="#dc2626" />}
+            </Box>
+            {loanActive ? (
+              <div style={{ background: '#fee2e2', border: '2px solid #fca5a5', borderRadius: 12, padding: '12px 14px', textAlign: 'center', fontSize: 13, color: '#b91c1c', fontWeight: 800 }}>
+                ⛔ You already have a loan of ₹{loanRemaining} to repay! Pay it off first before borrowing again. This is why loans can be dangerous — they pile up!
+              </div>
+            ) : (
+              <Btn onClick={() => { setCoins(coins+LOAN_AMOUNT); setLoanActive(true); setLoanRemaining(LOAN_REPAY); onClose(); }} disabled={false} bg="#d946ef" shadow="#86198f">
+                📋 Borrow ₹{LOAN_AMOUNT} (repay ₹{LOAN_REPAY} at GO)
+              </Btn>
+            )}
           </>
         );
 
@@ -754,7 +942,6 @@ export default function BoardGame() {
   const [floats, setFloats]             = useState<FloatingText[]>([]);
   const floatId                         = useRef(0);
 
-  // NEW: stepping token, tile reaction, wallet shake, turn log
   const [steppingPos, setSteppingPos]   = useState<number | null>(null);
   const [tileReaction, setTileReaction] = useState<TileReaction>(null);
   const [walletShake, setWalletShake]   = useState(false);
@@ -906,15 +1093,12 @@ export default function BoardGame() {
       fontFamily: '"Nunito", system-ui, sans-serif',
       position: 'relative',
     }}>
-      {/* Town3D rendered behind everything else */}
       <Town3D />
 
-      {/* Subtle dot pattern background */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.4,
         backgroundImage: 'radial-gradient(circle, #bae6fd 1px, transparent 1px)',
         backgroundSize: '28px 28px' }} />
 
-      {/* Floating coin texts */}
       {floats.map(ft => (
         <div key={ft.id} style={{
           position: 'fixed', left: `${ft.x}%`, top: `${ft.y}%`,
@@ -936,7 +1120,6 @@ export default function BoardGame() {
         background: 'white',
         borderBottom: '3px solid #e2e8f0',
       }}>
-        {/* Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 4 }}>
           <div style={{ width: 34, height: 34, borderRadius: 10, background: '#1e40af', border: '2px solid #1e40af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>🏦</div>
           <div style={{ fontFamily: 'Georgia, serif', fontWeight: 900, fontSize: 15, color: '#1e40af', letterSpacing: 1 }}>BANKOPOLY</div>
@@ -949,7 +1132,6 @@ export default function BoardGame() {
         <Pill icon="🏠" val={`${ownedTiles.length}`} label="Props" bg="#ffedd5" border="#fb923c" color="#c2410c" />
         <Pill icon="📊" val={`₹${netWorth.toLocaleString()}`} label="Net Worth" bg="#f3e8ff" border="#c084fc" color="#7e22ce" />
 
-        {/* Progress bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: 20, padding: '5px 12px' }}>
           <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>🏆 Goal</span>
           <div style={{ width: 90, height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
@@ -982,10 +1164,8 @@ export default function BoardGame() {
       {/* ── MAIN BOARD AREA ── */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
 
-        {/* ── LEFT PANEL — Turn Log ── */}
         <TurnSummary entries={turnLog} />
 
-        {/* BOARD — 3D tilt */}
         <div style={{ perspective: 1000, perspectiveOrigin: '50% 35%', flexShrink: 0 }}>
           <div style={{
             width: BS, height: BS,
@@ -1002,8 +1182,6 @@ export default function BoardGame() {
               outline: '4px solid #ca8a04',
               boxShadow: '0 0 0 10px #fbbf24, 0 0 0 13px #d97706',
             }}>
-
-              {/* CENTER */}
               <div style={{
                 position: 'absolute', top: CORN, left: CORN,
                 width: BS-CORN*2, height: BS-CORN*2,
@@ -1044,24 +1222,19 @@ export default function BoardGame() {
                 )}
               </div>
 
-              {/* TOP EDGE */}
               <div style={{ position: 'absolute', top: 0, left: CORN, width: BS-CORN*2, height: CORN, display: 'grid', gridTemplateColumns: `repeat(${N},1fr)`, gap: 2, padding: 2, boxSizing: 'border-box' }}>
                 {TOP.map(id => <BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="top" reaction={pos===id ? tileReaction : null} stepping={steppingPos===id && pos!==id} />)}
               </div>
-              {/* BOTTOM EDGE */}
               <div style={{ position: 'absolute', bottom: 0, left: CORN, width: BS-CORN*2, height: CORN, display: 'grid', gridTemplateColumns: `repeat(${N},1fr)`, gap: 2, padding: 2, boxSizing: 'border-box' }}>
                 {BOT.map(id => <BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="bottom" reaction={pos===id ? tileReaction : null} stepping={steppingPos===id && pos!==id} />)}
               </div>
-              {/* RIGHT EDGE */}
               <div style={{ position: 'absolute', right: 0, top: CORN, width: CORN, height: BS-CORN*2, display: 'grid', gridTemplateRows: `repeat(${N},1fr)`, gap: 2, padding: 2, boxSizing: 'border-box' }}>
                 {RIGHT.map(id => <BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="right" reaction={pos===id ? tileReaction : null} stepping={steppingPos===id && pos!==id} />)}
               </div>
-              {/* LEFT EDGE */}
               <div style={{ position: 'absolute', left: 0, top: CORN, width: CORN, height: BS-CORN*2, display: 'grid', gridTemplateRows: `repeat(${N},1fr)`, gap: 2, padding: 2, boxSizing: 'border-box' }}>
                 {LEFT.map(id => <BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="left" reaction={pos===id ? tileReaction : null} stepping={steppingPos===id && pos!==id} />)}
               </div>
 
-              {/* CORNERS */}
               <div style={{ position: 'absolute', top:0, left:0, width:CORN, height:CORN, padding:2, boxSizing:'border-box' }}><Corner icon="🎲" top="Free Park" bg="#fefce8" border="#a16207" /></div>
               <div style={{ position: 'absolute', top:0, right:0, width:CORN, height:CORN, padding:2, boxSizing:'border-box' }}><Corner icon="❓" top="Chance" bg="#dbeafe" border="#1e40af" /></div>
               <div style={{ position: 'absolute', bottom:0, left:0, width:CORN, height:CORN, padding:2, boxSizing:'border-box' }}><Corner icon="🏁" top="Collect" bot="← GO" bg="#dcfce7" border="#15803d" /></div>
@@ -1072,7 +1245,6 @@ export default function BoardGame() {
 
         {/* ── RIGHT PANEL ── */}
         <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          {/* GO BUTTON */}
           <button onClick={roll} disabled={rolling || !!modal} style={{
             width: 100, height: 100, borderRadius: '50%',
             background: rolling || !!modal ? '#94a3b8' : '#dc2626',
@@ -1088,7 +1260,6 @@ export default function BoardGame() {
             {!rolling && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)', fontWeight: 900, marginTop: 3, letterSpacing: '1px' }}>ROLL!</span>}
           </button>
 
-          {/* Stat cards */}
           {[
             { icon: '⚡', label: 'ZENCOINS', val: `₹${coins}`,   bg: '#fefce8', border: '#fbbf24', color: '#92400e' },
             { icon: '🏦', label: 'SAVINGS',  val: `₹${savings}`, bg: '#dcfce7', border: '#86efac', color: '#15803d' },
@@ -1104,7 +1275,6 @@ export default function BoardGame() {
 
           <button onClick={() => setShowATM(true)} style={{ width: 120, padding: '9px 10px', borderRadius: 12, border: '2px solid #86efac', background: '#dcfce7', color: '#15803d', fontWeight: 900, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>🏧 ATM</button>
 
-          {/* Tile progress ring */}
           <div style={{ position: 'relative', width: 58, height: 58 }}>
             <svg width="58" height="58" style={{ transform: 'rotate(-90deg)', position: 'absolute', top: 0, left: 0 }}>
               <circle cx="29" cy="29" r="22" fill="none" stroke="#e2e8f0" strokeWidth="5" />
@@ -1120,7 +1290,6 @@ export default function BoardGame() {
           </div>
         </div>
 
-        {/* Modals */}
         {modal && !showWin && (
           <Modal tile={modal} coins={coins} savings={savings} loanActive={loanActive} loanRemaining={loanRemaining} ownedTiles={ownedTiles} lapBonus={lapBonus} rentEarned={rentEarned} streak={streak}
             setCoins={setCoins} setSavings={setSavings} setLoanActive={setLoanActive} setLoanRemaining={setLoanRemaining} setOwnedTiles={setOwnedTiles}
