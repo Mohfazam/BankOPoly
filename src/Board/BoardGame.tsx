@@ -372,26 +372,67 @@ function ATMModal({ savings, onWithdraw, onClose }: { savings: number; onWithdra
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// WIN MODAL
+// WIN MODAL — matches PDF "YOU WIN! + House + ₹500 BONUS!" style
 // ═══════════════════════════════════════════════════════════════════════════
-function WinModal({ zenCoins, onClaim }: { zenCoins: number; onClaim: () => void }) {
+function WinModal({ zenCoins, savings, scamsAvoided, interestEarned, onClaim }: { zenCoins: number; savings: number; scamsAvoided: number; interestEarned: number; onClaim: () => void }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15,23,42,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ maxWidth: 400, width: '90%', background: '#fefce8', borderRadius: 28, border: '4px solid #ca8a04', padding: '32px 28px', textAlign: 'center', animation: 'slideInBounce 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>
-        <div style={{ fontSize: 64, marginBottom: 6, animation: 'pinBounce 1.5s ease-in-out infinite' }}>🏆</div>
-        <div style={{ fontFamily: 'Georgia, serif', fontWeight: 900, fontSize: 28, color: '#92400e', letterSpacing: 2, marginBottom: 8 }}>YOU WIN!</div>
-        <div style={{ fontSize: 14, color: '#78350f', fontWeight: 600, marginBottom: 20, lineHeight: 1.8 }}>
-          You grew to <strong>₹{zenCoins.toLocaleString()} ZenCoins</strong>!<br />
-          You're a money master! 🎉
+    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15,23,42,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ maxWidth: 420, width: '100%', animation: 'slideInBounce 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>
+
+        {/* Main win card */}
+        <div style={{ background: 'linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)', borderRadius: 28, border: '4px solid #d97706', padding: '28px 24px 20px', textAlign: 'center', marginBottom: 10, boxShadow: '0 20px 60px rgba(0,0,0,0.4), 0 0 0 8px rgba(251,191,36,0.2)' }}>
+
+          {/* Floating coins animation strip */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+            {['₹500','₹500','₹500','₹500'].map((v, i) => (
+              <div key={i} style={{ background: '#fbbf24', border: '2px solid #d97706', borderRadius: 12, padding: '3px 8px', fontSize: 11, fontWeight: 900, color: '#78350f', animation: `floatUp 2s ease-out ${i * 0.2}s infinite` }}>+{v}</div>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 56, marginBottom: 4, animation: 'pinBounce 1.5s ease-in-out infinite' }}>🏆</div>
+          <div style={{ fontFamily: 'Georgia, serif', fontWeight: 900, fontSize: 32, color: '#92400e', letterSpacing: 3, textShadow: '0 2px 4px rgba(0,0,0,0.15)', marginBottom: 4 }}>YOU WIN!</div>
+
+          {/* House unlock — matches PDF "You unlocked a House!" */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(0,0,0,0.08)', border: '2px solid #d97706', borderRadius: 16, padding: '8px 18px', marginBottom: 16 }}>
+            <span style={{ fontSize: 28 }}>🏠</span>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#92400e' }}>You unlocked a House!</div>
+              <div style={{ fontSize: 12, color: '#a16207', fontWeight: 700 }}>+₹500 BONUS! 🎉</div>
+            </div>
+          </div>
+
+          {/* ZenCoins earned */}
+          <div style={{ background: 'rgba(0,0,0,0.1)', border: '3px solid #d97706', borderRadius: 16, padding: '14px 20px', marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#fbbf24', border: '2px solid #d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: '#78350f', fontFamily: 'Georgia, serif' }}>Z</div>
+              <span style={{ fontSize: 36, fontWeight: 900, color: '#92400e', fontFamily: 'Georgia, serif' }}>{zenCoins.toLocaleString()}</span>
+            </div>
+            <div style={{ fontSize: 11, color: '#a16207', fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase', marginTop: 4 }}>Zen Points Earned</div>
+          </div>
         </div>
-        <div style={{ background: '#fef3c7', border: '3px solid #fbbf24', borderRadius: 16, padding: '16px 20px', marginBottom: 22 }}>
-          <div style={{ fontSize: 38, fontWeight: 900, color: '#d97706', lineHeight: 1 }}>⚡ {zenCoins.toLocaleString()}</div>
-          <div style={{ fontSize: 11, color: '#92400e', fontWeight: 800, letterSpacing: 2, marginTop: 4, textTransform: 'uppercase' }}>ZenCoins Earned</div>
+
+        {/* Banking Recap — matches PDF recap screen */}
+        <div style={{ background: 'white', borderRadius: 20, border: '3px solid #e5e7eb', padding: '18px 20px', marginBottom: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#0f172a', textAlign: 'center', marginBottom: 14, letterSpacing: 1, textTransform: 'uppercase' }}>🏦 Banking Recap</div>
+          {[
+            { icon: '💰', label: 'Coins Saved',      val: `${savings.toLocaleString()} Coins`, color: '#15803d' },
+            { icon: '📈', label: 'Interest Earned',   val: `₹${interestEarned.toLocaleString()} Earned`, color: '#2563eb' },
+            { icon: '🛡️', label: 'Scams Avoided',    val: `${scamsAvoided} Scams Avoided`, color: '#9333ea' },
+          ].map(r => (
+            <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f8fafc', border: '2px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{r.icon}</div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#475569' }}>{r.label}</span>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 900, color: r.color }}>{r.val}</span>
+            </div>
+          ))}
         </div>
-        <button onClick={onClaim} style={{ width: '100%', padding: '15px', borderRadius: 14, border: 'none', cursor: 'pointer', background: '#d97706', color: 'white', fontWeight: 900, fontSize: 17, fontFamily: '"Nunito", system-ui', boxShadow: '0 5px 0 #92400e' }}>
-          🗺️ Claim &amp; Go to Town Map!
+
+        <button onClick={onClaim} style={{ width: '100%', padding: '16px', borderRadius: 18, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #16a34a, #15803d)', color: 'white', fontWeight: 900, fontSize: 17, fontFamily: '"Nunito", system-ui', boxShadow: '0 6px 0 #14532d, 0 8px 20px rgba(21,128,61,0.4)', letterSpacing: 1 }}>
+          🗺️ Continue to Town Map!
         </button>
-        <div style={{ fontSize: 11, color: '#a16207', marginTop: 10, fontWeight: 600 }}>Use ZenCoins to build your empire!</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 10, fontWeight: 600, textAlign: 'center' }}>Your Zen Points will be added to your Town wealth!</div>
       </div>
     </div>
   );
@@ -494,10 +535,12 @@ interface ModalProps {
   setLoanRemaining: React.Dispatch<React.SetStateAction<number>>;
   setOwnedTiles: React.Dispatch<React.SetStateAction<number[]>>;
   onWalletShake: () => void;
+  onScamAvoided: () => void;
+  onInterestEarned: (n: number) => void;
   onClose: () => void;
 }
 
-function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, lapBonus, rentEarned, streak, setCoins, setSavings, setLoanActive, setLoanRemaining, setOwnedTiles, onWalletShake, onClose }: ModalProps) {
+function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, lapBonus, rentEarned, streak, setCoins, setSavings, setLoanActive, setLoanRemaining, setOwnedTiles, onWalletShake, onScamAvoided, onInterestEarned, onClose }: ModalProps) {
   const c = COLORS[tile.type];
   const isOwned = ownedTiles.includes(tile.id);
 
@@ -623,7 +666,7 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
               </div>
             </Box>
             {bonus === 0 && <p style={{ ...pStyle, color: '#dc2626', fontSize: 13, margin: '0 0 12px', fontWeight: 700 }}>💡 Save some coins first to earn interest!</p>}
-            <Btn onClick={() => { if (bonus > 0) setSavings(savings + bonus); onClose(); }} bg="#0d9488" shadow="#0f766e" disabled={bonus === 0}>
+            <Btn onClick={() => { if (bonus > 0) { setSavings(savings + bonus); onInterestEarned(bonus); } onClose(); }} bg="#0d9488" shadow="#0f766e" disabled={bonus === 0}>
               {bonus > 0 ? `Collect ₹${bonus} interest! 💰` : 'Save first, then earn!'}
             </Btn>
           </>
@@ -647,7 +690,7 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
               <Btn onClick={() => { setCoins(Math.max(0, coins-100)); onClose(); }} bg="#dc2626" shadow="#b91c1c">
                 Give OTP<br /><span style={{ fontSize: 12 }}>LOSE ₹100 😱</span>
               </Btn>
-              <Btn onClick={() => { setCoins(coins+50); onClose(); }} bg="#16a34a" shadow="#15803d">
+              <Btn onClick={() => { setCoins(coins+50); onScamAvoided(); onClose(); }} bg="#16a34a" shadow="#15803d">
                 Ignore It!<br /><span style={{ fontSize: 12 }}>WIN ₹50 🎉</span>
               </Btn>
             </div>
@@ -907,26 +950,16 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
 // ═══════════════════════════════════════════════════════════════════════════
 // STAT PILL
 // ═══════════════════════════════════════════════════════════════════════════
-function Pill({ icon, val, label, bg, border, color }: { icon: string; val: string; label: string; bg: string; border: string; color: string }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 7, background: bg, border: `2px solid ${border}`, borderRadius: 24, padding: '5px 12px' }}>
-      <span style={{ fontSize: 15 }}>{icon}</span>
-      <div>
-        <div style={{ fontWeight: 900, fontSize: 14, color, lineHeight: 1, fontFamily: '"Nunito", system-ui' }}>{val}</div>
-        <div style={{ fontSize: 8, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-      </div>
-    </div>
-  );
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MAIN GAME
 // ═══════════════════════════════════════════════════════════════════════════
 export default function BoardGame() {
-  // ── Zustand store actions ──
+  // ── Zustand store actions + reads ──
   const claimReward  = useGameStore((s) => s.claimReward);
   const syncSavings  = useGameStore((s) => s.syncSavings);
   const resetGameRun = useGameStore((s) => s.resetGameRun);
+  const wealth       = useGameStore((s) => s.wealth); // accumulated from previous runs
 
   const [coins, setCoins]               = useState(300);
   const [savings, setSavings]           = useState(0);
@@ -945,6 +978,8 @@ export default function BoardGame() {
   const [showATM, setShowATM]           = useState(false);
   const [showHowTo, setShowHowTo]       = useState(false);
   const [showWin, setShowWin]           = useState(false);
+  const [scamsAvoided, setScamsAvoided] = useState(0);
+  const [interestEarned, setInterestEarned] = useState(0);
   const [floats, setFloats]             = useState<FloatingText[]>([]);
   const floatId                         = useRef(0);
 
@@ -1102,15 +1137,16 @@ export default function BoardGame() {
     <div style={{
       width: '100vw', height: '100vh', overflow: 'hidden',
       display: 'flex', flexDirection: 'column',
-      background: '#f0f9ff',
+      background: '#f2e8d0',
       fontFamily: '"Nunito", system-ui, sans-serif',
       position: 'relative',
     }}>
       <Town3D />
 
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.4,
-        backgroundImage: 'radial-gradient(circle, #bae6fd 1px, transparent 1px)',
-        backgroundSize: '28px 28px' }} />
+      {/* warm parchment coin-pattern bg — matches PDF cover aesthetic */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, opacity: 0.18,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Ccircle cx='30' cy='30' r='18' fill='none' stroke='%23a16207' stroke-width='2'/%3E%3Ccircle cx='30' cy='30' r='12' fill='none' stroke='%23a16207' stroke-width='1'/%3E%3Cline x1='30' y1='12' x2='30' y2='48' stroke='%23a16207' stroke-width='1.5'/%3E%3C/svg%3E")`,
+        backgroundSize: '60px 60px' }} />
 
       {floats.map(ft => (
         <div key={ft.id} style={{
@@ -1125,52 +1161,83 @@ export default function BoardGame() {
         }}>{ft.text}</div>
       ))}
 
-      {/* ── TOP HUD ── */}
+      {/* ── TOP HUD — mobile-game style matching PDF ── */}
       <div style={{
         flexShrink: 0, position: 'relative', zIndex: 10,
-        display: 'flex', alignItems: 'center', flexWrap: 'wrap',
-        padding: '7px 14px', gap: 8,
-        background: 'white',
-        borderBottom: '3px solid #e2e8f0',
+        display: 'flex', alignItems: 'center',
+        padding: '8px 14px', gap: 8,
+        background: 'linear-gradient(180deg, #2d5a1b 0%, #1e4012 100%)',
+        borderBottom: '3px solid #a16207',
+        boxShadow: '0 3px 12px rgba(0,0,0,0.3)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 4 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: '#1e40af', border: '2px solid #1e40af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>🏦</div>
-          <div style={{ fontFamily: 'Georgia, serif', fontWeight: 900, fontSize: 15, color: '#1e40af', letterSpacing: 1 }}>BANKOPOLY</div>
+        {/* BANKOPOLY brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 6 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fbbf24', border: '2px solid #d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🏦</div>
+          <div style={{ fontFamily: 'Georgia, serif', fontWeight: 900, fontSize: 14, color: '#fbbf24', letterSpacing: 2, textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>BANKOPOLY</div>
         </div>
 
-        <div style={{ animation: walletShake ? 'walletShake 0.5s ease' : undefined }}>
-          <Pill icon="⚡" val={`₹${coins.toLocaleString()}`} label="ZenCoins" bg={walletShake ? '#fee2e2' : '#fefce8'} border={walletShake ? '#fca5a5' : '#fbbf24'} color="#92400e" />
-        </div>
-        <Pill icon="🏦" val={`₹${savings.toLocaleString()}`} label="Savings" bg="#dcfce7" border="#86efac" color="#15803d" />
-        <Pill icon="🏠" val={`${ownedTiles.length}`} label="Props" bg="#ffedd5" border="#fb923c" color="#c2410c" />
-        <Pill icon="📊" val={`₹${netWorth.toLocaleString()}`} label="Net Worth" bg="#f3e8ff" border="#c084fc" color="#7e22ce" />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: 20, padding: '5px 12px' }}>
-          <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>🏆 Goal</span>
-          <div style={{ width: 90, height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 4, width: `${progressPct}%`, background: '#fbbf24', transition: 'width 0.6s ease' }} />
+        {/* ── ZenCoins pill — with Zen Points Z icon from PDF ── */}
+        <div style={{ animation: walletShake ? 'walletShake 0.5s ease' : undefined, display: 'flex', alignItems: 'center', gap: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.35)', border: '2px solid #fbbf24', borderRadius: 20, padding: '5px 12px' }}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: '#78350f', fontFamily: 'Georgia, serif' }}>Z</div>
+            <span style={{ fontWeight: 900, fontSize: 15, color: '#fef08a', fontFamily: '"Nunito", system-ui' }}>{coins.toLocaleString()}</span>
           </div>
-          <span style={{ fontSize: 12, color: '#92400e', fontWeight: 800, whiteSpace: 'nowrap' }}>{progressPct}%</span>
         </div>
 
+        {/* Savings */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.35)', border: '2px solid #4ade80', borderRadius: 20, padding: '5px 12px' }}>
+          <span style={{ fontSize: 14 }}>🏦</span>
+          <span style={{ fontWeight: 900, fontSize: 14, color: '#86efac' }}>{savings.toLocaleString()}</span>
+          <span style={{ fontSize: 9, color: '#4ade80', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>saved</span>
+        </div>
+
+        {/* ── WEALTH — total accumulated from Zustand store ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.35)', border: '2px solid #c084fc', borderRadius: 20, padding: '5px 12px' }}>
+          <span style={{ fontSize: 14 }}>💎</span>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 14, color: '#e9d5ff', lineHeight: 1 }}>{wealth.toLocaleString()}</div>
+            <div style={{ fontSize: 8, color: '#c084fc', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>wealth</div>
+          </div>
+        </div>
+
+        {/* Properties */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.35)', border: '2px solid #fb923c', borderRadius: 20, padding: '5px 12px' }}>
+          <span style={{ fontSize: 14 }}>🏠</span>
+          <span style={{ fontWeight: 900, fontSize: 14, color: '#fed7aa' }}>{ownedTiles.length}</span>
+          <span style={{ fontSize: 9, color: '#fb923c', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>props</span>
+        </div>
+
+        {/* Goal progress bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.3)', border: '2px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '5px 12px' }}>
+          <span style={{ fontSize: 11, color: '#fbbf24', fontWeight: 800, whiteSpace: 'nowrap' }}>🏆</span>
+          <div style={{ width: 80, height: 8, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 4, width: `${progressPct}%`, background: 'linear-gradient(90deg, #fbbf24, #f59e0b)', transition: 'width 0.6s ease' }} />
+          </div>
+          <span style={{ fontSize: 11, color: '#fef08a', fontWeight: 900, whiteSpace: 'nowrap' }}>{progressPct}%</span>
+        </div>
+
+        {/* Loan warning */}
         {loanActive && (
-          <div style={{ background: '#fee2e2', border: '2px solid #fca5a5', borderRadius: 16, padding: '5px 10px', fontSize: 11, fontWeight: 800, color: '#b91c1c' }}>
+          <div style={{ background: 'rgba(220,38,38,0.85)', border: '2px solid #fca5a5', borderRadius: 16, padding: '5px 10px', fontSize: 11, fontWeight: 900, color: 'white' }}>
             ⚠️ Loan ₹{loanRemaining}
           </div>
         )}
 
+        {/* Streak */}
         {streak >= 3 && (
-          <div style={{ background: '#fff7ed', border: '2px solid #fb923c', borderRadius: 16, padding: '5px 10px', fontSize: 11, fontWeight: 800, color: '#c2410c', animation: 'pinBounce 1s ease-in-out infinite' }}>
-            🔥 {streak} Lap Streak!
+          <div style={{ background: 'rgba(234,88,12,0.85)', border: '2px solid #fb923c', borderRadius: 16, padding: '5px 10px', fontSize: 11, fontWeight: 900, color: 'white', animation: 'pinBounce 1s ease-in-out infinite' }}>
+            🔥 {streak}x Streak!
           </div>
         )}
 
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <button onClick={() => setShowATM(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#dcfce7', border: '2px solid #86efac', borderRadius: 16, padding: '6px 12px', color: '#15803d', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>🏧 ATM</button>
-          <button onClick={() => setShowHowTo(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#dbeafe', border: '2px solid #93c5fd', borderRadius: 16, padding: '6px 12px', color: '#1e40af', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}>❓ Help</button>
-          <div style={{ background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: 16, padding: '5px 10px', fontSize: 11, fontWeight: 800, color: '#64748b', display: 'flex', alignItems: 'center' }}>
-            Round {laps+1} · Tile {pos+1}/20
+        {/* Right side buttons — gear + help + round info — matching PDF top-right icons */}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+          <div style={{ background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.2)', borderRadius: 16, padding: '4px 10px', fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.8)' }}>
+            Lap {laps+1} · {pos+1}/20
           </div>
+          <button onClick={() => setShowATM(true)} style={{ width: 34, height: 34, borderRadius: 10, border: '2px solid #4ade80', background: 'rgba(0,0,0,0.4)', color: '#4ade80', fontWeight: 900, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="ATM">🏧</button>
+          <button onClick={() => setShowHowTo(true)} style={{ width: 34, height: 34, borderRadius: 10, border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.4)', color: 'white', fontWeight: 900, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Help">❓</button>
+          <button style={{ width: 34, height: 34, borderRadius: 10, border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.4)', color: 'rgba(255,255,255,0.7)', fontWeight: 900, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Settings">⚙️</button>
         </div>
       </div>
 
@@ -1257,48 +1324,59 @@ export default function BoardGame() {
         </div>
 
         {/* ── RIGHT PANEL ── */}
-        <div style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+        <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+
+          {/* BIG GO BUTTON — matches PDF red circular roll button */}
           <button onClick={roll} disabled={rolling || !!modal} style={{
-            width: 100, height: 100, borderRadius: '50%',
-            background: rolling || !!modal ? '#94a3b8' : '#dc2626',
+            width: 96, height: 96, borderRadius: '50%',
+            background: rolling || !!modal
+              ? 'linear-gradient(135deg, #94a3b8, #64748b)'
+              : 'linear-gradient(135deg, #ef4444, #dc2626)',
             border: '4px solid white',
-            boxShadow: rolling || !!modal ? '0 4px 0 #64748b' : '0 8px 0 #991b1b',
+            boxShadow: rolling || !!modal
+              ? '0 4px 0 #475569, 0 0 0 3px rgba(148,163,184,0.3)'
+              : '0 6px 0 #991b1b, 0 0 0 3px rgba(239,68,68,0.3)',
             cursor: rolling || !!modal ? 'not-allowed' : 'pointer',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            transform: rolling ? 'translateY(6px)' : 'translateY(0)',
+            transform: rolling ? 'translateY(5px)' : 'translateY(0)',
             transition: 'all 0.15s',
             outline: 'none',
           }}>
-            <span style={{ fontSize: rolling ? 28 : 36, color: 'white', fontWeight: 900, fontFamily: 'Georgia, serif', lineHeight: 1 }}>{rolling ? '🎲' : 'GO'}</span>
-            {!rolling && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)', fontWeight: 900, marginTop: 3, letterSpacing: '1px' }}>ROLL!</span>}
+            <span style={{ fontSize: rolling ? 28 : 34, color: 'white', fontWeight: 900, fontFamily: 'Georgia, serif', lineHeight: 1 }}>{rolling ? '🎲' : 'GO'}</span>
+            {!rolling && <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.9)', fontWeight: 900, marginTop: 2, letterSpacing: '1.5px' }}>ROLL!</span>}
           </button>
 
+          {/* Stat cards — game-panel style */}
           {[
-            { icon: '⚡', label: 'ZENCOINS', val: `₹${coins}`,   bg: '#fefce8', border: '#fbbf24', color: '#92400e' },
-            { icon: '🏦', label: 'SAVINGS',  val: `₹${savings}`, bg: '#dcfce7', border: '#86efac', color: '#15803d' },
-            { icon: '🏠', label: 'PROPS',    val: `${ownedTiles.length}`, bg: '#ffedd5', border: '#fb923c', color: '#c2410c' },
-            { icon: '📊', label: 'WORTH',    val: `₹${netWorth}`, bg: '#f3e8ff', border: '#c084fc', color: '#7e22ce' },
+            { icon: 'Z', label: 'ZENCOINS', val: `₹${coins}`,   bg: 'linear-gradient(135deg,#fef9c3,#fef08a)', border: '#fbbf24', color: '#92400e', iconBg: '#fbbf24', iconColor: '#78350f', iconFont: true },
+            { icon: '🏦', label: 'SAVINGS',  val: `₹${savings}`, bg: 'linear-gradient(135deg,#dcfce7,#bbf7d0)', border: '#4ade80', color: '#15803d', iconBg: '#16a34a', iconColor: 'white', iconFont: false },
+            { icon: '💎', label: 'WEALTH',   val: `₹${wealth}`,  bg: 'linear-gradient(135deg,#f3e8ff,#e9d5ff)', border: '#c084fc', color: '#7e22ce', iconBg: '#9333ea', iconColor: 'white', iconFont: false },
+            { icon: '🏠', label: 'PROPS',    val: `${ownedTiles.length}/4`, bg: 'linear-gradient(135deg,#ffedd5,#fed7aa)', border: '#fb923c', color: '#c2410c', iconBg: '#ea580c', iconColor: 'white', iconFont: false },
           ].map(s => (
-            <div key={s.label} style={{ background: s.bg, border: `2px solid ${s.border}`, borderRadius: 12, padding: '8px 10px', textAlign: 'center', width: 120 }}>
-              <div style={{ fontSize: 16 }}>{s.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 900, color: s.color, lineHeight: 1.2, marginTop: 2 }}>{s.val}</div>
-              <div style={{ fontSize: 8, color: '#64748b', fontWeight: 800, marginTop: 1, letterSpacing: '0.5px', textTransform: 'uppercase' }}>{s.label}</div>
+            <div key={s.label} style={{ background: s.bg, border: `2.5px solid ${s.border}`, borderRadius: 14, padding: '8px 10px', textAlign: 'center', width: 108, boxShadow: `0 3px 8px ${s.border}44` }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: s.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 4px', fontSize: s.iconFont ? 12 : 16, fontWeight: 900, color: s.iconColor, fontFamily: s.iconFont ? 'Georgia, serif' : undefined }}>
+                {s.icon}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: s.color, lineHeight: 1.2 }}>{s.val}</div>
+              <div style={{ fontSize: 7, color: s.color, fontWeight: 800, marginTop: 1, letterSpacing: '0.8px', textTransform: 'uppercase', opacity: 0.7 }}>{s.label}</div>
             </div>
           ))}
 
-          <button onClick={() => setShowATM(true)} style={{ width: 120, padding: '9px 10px', borderRadius: 12, border: '2px solid #86efac', background: '#dcfce7', color: '#15803d', fontWeight: 900, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>🏧 ATM</button>
+          {/* ATM button */}
+          <button onClick={() => setShowATM(true)} style={{ width: 108, padding: '9px 10px', borderRadius: 12, border: '2.5px solid #4ade80', background: 'linear-gradient(135deg,#dcfce7,#bbf7d0)', color: '#15803d', fontWeight: 900, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, boxShadow: '0 3px 6px rgba(74,222,128,0.25)' }}>🏧 ATM</button>
 
-          <div style={{ position: 'relative', width: 58, height: 58 }}>
-            <svg width="58" height="58" style={{ transform: 'rotate(-90deg)', position: 'absolute', top: 0, left: 0 }}>
-              <circle cx="29" cy="29" r="22" fill="none" stroke="#e2e8f0" strokeWidth="5" />
-              <circle cx="29" cy="29" r="22" fill="none" stroke="#fbbf24" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray={`${2*Math.PI*22}`}
-                strokeDashoffset={`${2*Math.PI*22*(1-(pos+1)/20)}`}
+          {/* Lap progress ring */}
+          <div style={{ position: 'relative', width: 54, height: 54 }}>
+            <svg width="54" height="54" style={{ transform: 'rotate(-90deg)', position: 'absolute', top: 0, left: 0 }}>
+              <circle cx="27" cy="27" r="21" fill="none" stroke="rgba(0,0,0,0.15)" strokeWidth="5" />
+              <circle cx="27" cy="27" r="21" fill="none" stroke="#fbbf24" strokeWidth="5" strokeLinecap="round"
+                strokeDasharray={`${2*Math.PI*21}`}
+                strokeDashoffset={`${2*Math.PI*21*(1-(pos+1)/20)}`}
                 style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 13, fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{pos+1}</span>
-              <span style={{ fontSize: 7, color: '#94a3b8', fontWeight: 700 }}>/20</span>
+              <span style={{ fontSize: 12, fontWeight: 900, color: '#92400e', lineHeight: 1 }}>{pos+1}</span>
+              <span style={{ fontSize: 7, color: '#a16207', fontWeight: 700 }}>/20</span>
             </div>
           </div>
         </div>
@@ -1307,11 +1385,13 @@ export default function BoardGame() {
           <Modal tile={modal} coins={coins} savings={savings} loanActive={loanActive} loanRemaining={loanRemaining} ownedTiles={ownedTiles} lapBonus={lapBonus} rentEarned={rentEarned} streak={streak}
             setCoins={setCoins} setSavings={setSavings} setLoanActive={setLoanActive} setLoanRemaining={setLoanRemaining} setOwnedTiles={setOwnedTiles}
             onWalletShake={triggerWalletShake}
+            onScamAvoided={() => setScamsAvoided(n => n + 1)}
+            onInterestEarned={(n) => setInterestEarned(t => t + n)}
             onClose={() => setModal(null)} />
         )}
         {showATM   && <ATMModal savings={savings} onWithdraw={(amt) => { setSavings(s => s-amt); setCoins(c => c+amt); }} onClose={() => setShowATM(false)} />}
         {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)} />}
-        {showWin   && <WinModal zenCoins={netWorth} onClaim={() => {
+        {showWin   && <WinModal zenCoins={netWorth} savings={savings} scamsAvoided={scamsAvoided} interestEarned={interestEarned} onClaim={() => {
           // ── Persist earned wealth to Zustand store ──
           // netWorth (coins + savings + property value - loan) becomes the
           // player's "wealth" currency spendable in TownMap.
