@@ -17,8 +17,6 @@ import {
   MeshDistortMaterial,
   MeshWobbleMaterial,
   Cloud as DreiCloud,
-  Billboard,
-  Trail,
 } from '@react-three/drei';
 import {
   EffectComposer,
@@ -34,13 +32,7 @@ import * as THREE from 'three';
 /* ─────────────────────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────────────────────── */
-function useWave(speed = 1, amplitude = 0.06, offset = 0) {
-  const val = useRef(0);
-  useFrame(({ clock }) => {
-    val.current = Math.sin(clock.getElapsedTime() * speed + offset) * amplitude;
-  });
-  return val;
-}
+
 
 /* ─────────────────────────────────────────────────────────
    GROUND — multi-layer with subtle hex tile pattern
@@ -509,7 +501,7 @@ function HouseBuilding({
 }: {
   position: [number, number, number]; color: string; roofColor: string; s?: number;
 }) {
-  const phase = useMemo(() => Math.random() * Math.PI * 2, []);
+  
   return (
     <Float speed={0.7 + Math.random() * 0.3} rotationIntensity={0} floatIntensity={0.3} floatingRange={[0, 0.1]}>
       <group position={position} scale={s}>
