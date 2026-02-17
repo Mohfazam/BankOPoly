@@ -1043,7 +1043,7 @@ export default function BoardGame() {
       }}>
 
         {/* BOARD */}
-        <div style={{ perspective: 1100, perspectiveOrigin: '50% 38%', flexShrink: 0 }}>
+        <div style={{ perspective: 1100, perspectiveOrigin: '50% 38%', flexShrink: 0, marginTop: '-100px' }}>
           <div style={{
             width: BS, height: BS,
             transform: 'rotateX(46deg) rotateZ(-38deg)',
