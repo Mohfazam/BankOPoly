@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { Town3D } from './Town3D';
 
-// ─── TYPES & DATA ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPES & CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
 type TileType = 'start'|'save'|'interest'|'scam'|'budget'|'property'|'loan'|'normal';
 interface Tile { id:number; type:TileType; label:string; icon:string; price:number; rent:number; }
 
@@ -54,8 +56,9 @@ const DARK: Record<TileType,string> = {
   save:'#1d4ed8',  normal:'#374151',   budget:'#6b21a8', scam:'#991b1b',
 };
 
-// ─── CSS DICE ─────────────────────────────────────────────────────────────────
-// Standard die dot layout using a 3×3 grid of boolean slots
+// ═══════════════════════════════════════════════════════════════════════════
+// CSS DICE COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 const F=false, T=true;
 const FACES: Record<number, boolean[]> = {
   1: [F,F,F, F,T,F, F,F,F],
@@ -70,20 +73,18 @@ function Dice({ value, rolling }: { value:number; rolling:boolean }) {
   const dots = FACES[value] ?? FACES[1];
   return (
     <div style={{
-      width: 84, height: 84,
-      borderRadius: 18,
+      width: 80, height: 80,
+      borderRadius: 16,
       background: 'white',
-      // Crisp glow when rolling, solid shadow when resting
       boxShadow: rolling
-        ? '0 0 0 3px #fbbf24, 0 0 28px rgba(251,191,36,0.7), 0 6px 20px rgba(0,0,0,0.4)'
-        : '0 6px 0 rgba(0,0,0,0.3), 0 10px 28px rgba(0,0,0,0.4)',
+        ? '0 0 0 3px #fbbf24, 0 0 28px rgba(251,191,36,0.8), 0 6px 20px rgba(0,0,0,0.4)'
+        : '0 6px 0 rgba(0,0,0,0.3), 0 10px 28px rgba(0,0,0,0.45)',
       display: 'grid',
       gridTemplateColumns: 'repeat(3, 1fr)',
       gridTemplateRows: 'repeat(3, 1fr)',
-      padding: 13,
-      gap: 4,
-      // animation key changes on each render during rolling so it always replays
-      animation: rolling ? 'diceRoll 0.13s linear infinite' : 'diceLand 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+      padding: 12,
+      gap: 3,
+      animation: rolling ? 'diceRoll 0.12s linear infinite' : 'diceLand 0.4s cubic-bezier(0.34,1.56,0.64,1)',
       transition: 'box-shadow 0.25s ease',
       userSelect: 'none',
     }}>
@@ -91,7 +92,7 @@ function Dice({ value, rolling }: { value:number; rolling:boolean }) {
         <div key={i} style={{display:'flex', alignItems:'center', justifyContent:'center'}}>
           {on && (
             <div style={{
-              width: 13, height: 13,
+              width: 12, height: 12,
               borderRadius: '50%',
               background: 'radial-gradient(circle at 35% 30%, #374151, #0f172a)',
               boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.15), 0 1px 3px rgba(0,0,0,0.4)',
@@ -103,7 +104,9 @@ function Dice({ value, rolling }: { value:number; rolling:boolean }) {
   );
 }
 
-// ─── BOARD TILE ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// BOARD TILE COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 function BTile({ tile, active, owned, side }: {
   tile:Tile; active:boolean; owned:boolean; side:'top'|'bottom'|'left'|'right';
 }) {
@@ -141,7 +144,7 @@ function BTile({ tile, active, owned, side }: {
         ? '0 0 0 1px rgba(217,119,6,0.3) inset'
         : undefined,
     }}>
-      {/* Colour strip */}
+      {/* Color strip */}
       <div style={{position:'absolute', background: dark, ...stripPos}}/>
 
       {/* Gold shimmer on owned properties */}
@@ -216,7 +219,9 @@ function BTile({ tile, active, owned, side }: {
   );
 }
 
-// ─── CORNER ───────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// CORNER TILE
+// ═══════════════════════════════════════════════════════════════════════════
 function Corner({ icon, top, bot, bg, border }: {
   icon:string; top:string; bot?:string; bg:string; border:string;
 }) {
@@ -234,7 +239,9 @@ function Corner({ icon, top, bot, bg, border }: {
   );
 }
 
-// ─── MODAL ────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// MODAL (TILE INTERACTION)
+// ═══════════════════════════════════════════════════════════════════════════
 const P: React.CSSProperties = {
   color:'#4b5563', fontSize:14, lineHeight:1.65, textAlign:'center',
   margin:'0 0 14px', fontFamily:'system-ui, sans-serif',
@@ -300,7 +307,6 @@ function Modal({
 
   const body = () => {
     switch (tile.type) {
-
       case 'start':
         return (<>
           {lapBonus !== null && (
@@ -449,10 +455,7 @@ function Modal({
         onClick={(e) => e.stopPropagation()}
         style={{width:'100%',maxWidth:460,background:'white',borderRadius:'28px 28px 0 0',padding:'0 22px 36px',animation:'su 0.35s cubic-bezier(0.34,1.56,0.64,1)',maxHeight:'85vh',overflowY:'auto'}}
       >
-        {/* Handle */}
         <div style={{width:44,height:4,background:'#e5e7eb',borderRadius:2,margin:'12px auto 20px'}}/>
-
-        {/* Header */}
         <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:20}}>
           <div style={{width:54,height:54,borderRadius:18,background:ac,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,boxShadow:`0 6px 20px ${ac}55`,flexShrink:0}}>
             {tile.icon}
@@ -464,9 +467,7 @@ function Modal({
             </div>
           </div>
         </div>
-
         {body()}
-
         <button onClick={onClose} style={{width:'100%',marginTop:12,padding:14,borderRadius:14,border:'none',cursor:'pointer',background:'#f3f4f6',color:'#9ca3af',fontWeight:700,fontSize:13,letterSpacing:'0.3px'}}>
           Continue
         </button>
@@ -475,7 +476,9 @@ function Modal({
   );
 }
 
-// ─── MAIN GAME ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN GAME
+// ═══════════════════════════════════════════════════════════════════════════
 export default function BoardGame() {
   const [coins, setCoins]                = useState(300);
   const [savings, setSavings]            = useState(0);
@@ -489,7 +492,6 @@ export default function BoardGame() {
   const [lapBonus, setLapBonus]          = useState<number|null>(null);
   const [rentEarned, setRentEarned]      = useState<number|null>(null);
   const [laps, setLaps]                  = useState(0);
-  // rollSeed forces Dice to remount each roll so diceLand always replays
   const [rollSeed, setRollSeed]          = useState(0);
 
   const roll = () => {
@@ -501,19 +503,16 @@ export default function BoardGame() {
     setTimeout(() => {
       const r    = Math.floor(Math.random() * 6) + 1;
       const next = (pos + r) % 20;
-      // Detect crossing GO boundary
       const crossedGo = (pos + r) >= 20;
 
       let newCoins = coins;
 
-      // ── Salary on passing / landing GO ──────────────────────────────────
       if (crossedGo) {
         newCoins += GO_SALARY;
         setLapBonus(GO_SALARY);
         setLaps(l => l + 1);
       }
 
-      // ── Loan repayment deducted on lap completion ────────────────────────
       if (crossedGo && loanActive) {
         const repay = Math.min(newCoins, loanRemaining);
         newCoins   -= repay;
@@ -522,7 +521,6 @@ export default function BoardGame() {
         if (rem <= 0) setLoanActive(false);
       }
 
-      // ── Rent collected on your own property (solo: you are landlord) ─────
       const landedTile = TILES[next];
       if (landedTile.type === 'property' && ownedTiles.includes(next)) {
         newCoins += landedTile.rent;
@@ -531,7 +529,6 @@ export default function BoardGame() {
 
       setCoins(newCoins);
       setPos(next);
-      // Set dice value BEFORE clearing rolling so the diceLand animation fires
       setDiceVal(r);
       setRollSeed(s => s + 1);
 
@@ -542,11 +539,10 @@ export default function BoardGame() {
     }, 600);
   };
 
-  // Board dimensions
-  const CORN = 80;  // corner tile size
-  const CELL = 70;  // regular tile size
-  const N    = 5;   // tiles per side
-  const BS   = CORN * 2 + CELL * N; // = 160 + 350 = 510px
+  const CORN = 80;
+  const CELL = 70;
+  const N    = 5;
+  const BS   = CORN * 2 + CELL * N;
 
   const propCount = ownedTiles.length;
   const propValue = ownedTiles.reduce((s, id) => s + TILES[id].price, 0);
@@ -556,20 +552,19 @@ export default function BoardGame() {
     <div style={{
       width:'100vw', height:'100vh', overflow:'hidden',
       display:'flex', flexDirection:'column',
-      background:'#111c14', fontFamily:'system-ui, sans-serif',
+      background:'#0a1410', fontFamily:'system-ui, sans-serif',
       position:'relative',
     }}>
       <Town3D />
 
-      {/* ── HUD ──────────────────────────────────────────────────────────── */}
+      {/* HUD */}
       <div style={{
         flexShrink:0, position:'relative', zIndex:10,
         display:'flex', alignItems:'center', flexWrap:'wrap',
         padding:'7px 16px', gap:7,
-        background:'rgba(0,0,0,0.55)', backdropFilter:'blur(14px)',
-        borderBottom:'1px solid rgba(255,255,255,0.07)',
+        background:'rgba(0,0,0,0.6)', backdropFilter:'blur(14px)',
+        borderBottom:'1px solid rgba(255,255,255,0.08)',
       }}>
-        {/* Avatar */}
         <div style={{
           width:36, height:36, borderRadius:'50%', flexShrink:0,
           background:'linear-gradient(135deg, #3b82f6, #1d4ed8)',
@@ -578,7 +573,6 @@ export default function BoardGame() {
           fontSize:17, boxShadow:'0 2px 10px rgba(59,130,246,0.4)',
         }}>🐠</div>
 
-        {/* Stat pills */}
         {[
           {icon:'💵', val:`₹${coins.toLocaleString()}`,       bg:'rgba(251,191,36,0.12)',  bd:'rgba(251,191,36,0.25)',  c:'#fde68a' },
           {icon:'🏦', val:`₹${savings.toLocaleString()}`,     bg:'rgba(52,211,153,0.12)',  bd:'rgba(52,211,153,0.25)',  c:'#6ee7b7' },
@@ -609,18 +603,18 @@ export default function BoardGame() {
         </div>
       </div>
 
-      {/* ── MAIN ─────────────────────────────────────────────────────────── */}
+      {/* MAIN — FIX: proper flex layout, board on left, panel on right */}
       <div style={{
         flex:1, display:'flex', alignItems:'center',
-        justifyContent:'center', gap:32,
-        padding:'0 28px', overflow:'hidden',
+        justifyContent:'space-between',
+        padding:'0 40px', overflow:'hidden',
         position:'relative', zIndex:1,
       }}>
 
-        {/* BOARD ────────────────────────────────────────────────────────── */}
+        {/* BOARD (LEFT) */}
         <div style={{
           perspective:1100, perspectiveOrigin:'50% 38%',
-          flexShrink:0, marginTop:'-28px',
+          flexShrink:0,
         }}>
           <div style={{
             width:BS, height:BS,
@@ -630,7 +624,6 @@ export default function BoardGame() {
             filter:'drop-shadow(0 26px 40px rgba(0,0,0,0.85)) drop-shadow(0 8px 14px rgba(0,0,0,0.5))',
             animation:'boardFloat 7s ease-in-out infinite',
           }}>
-            {/* Board surface */}
             <div style={{
               position:'relative', width:BS, height:BS,
               background:'#f5ede0',
@@ -639,23 +632,21 @@ export default function BoardGame() {
               boxShadow:'0 0 0 11px #a87843, 0 0 0 16px #1a1a0e, 0 0 0 18px rgba(255,255,255,0.04), 0 28px 70px rgba(0,0,0,0.9)',
             }}>
 
-              {/* ── BOARD CENTER ─────────────────────────────────────────── */}
+              {/* BOARD CENTER */}
               <div style={{
                 position:'absolute', top:CORN, left:CORN,
                 width:BS-CORN*2, height:BS-CORN*2,
                 background:'radial-gradient(ellipse at 38% 32%, #27ae60 0%, #1e8449 45%, #145a32 100%)',
                 display:'flex', flexDirection:'column',
                 alignItems:'center', justifyContent:'center',
-                gap:12, overflow:'hidden',
+                gap:10, overflow:'hidden',
                 boxShadow:'inset 0 0 40px rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.08)',
               }}>
-                {/* Decorative inner border */}
                 <div style={{
                   position:'absolute', inset:10,
                   border:'1px solid rgba(255,255,255,0.07)',
                   borderRadius:6, pointerEvents:'none',
                 }}/>
-                {/* Subtle corner accents */}
                 {['TL','TR','BL','BR'].map(c => (
                   <div key={c} style={{
                     position:'absolute',
@@ -669,18 +660,16 @@ export default function BoardGame() {
                   }}/>
                 ))}
 
-                {/* BANKOPOLY title */}
                 <div style={{
-                  fontFamily:'Georgia, serif', fontWeight:900, fontSize:14,
+                  fontFamily:'Georgia, serif', fontWeight:900, fontSize:13,
                   color:'rgba(255,255,255,0.95)',
                   textShadow:'0 2px 12px rgba(0,0,0,0.7), 0 0 24px rgba(255,255,255,0.1)',
-                  letterSpacing:4, textAlign:'center', lineHeight:1.35,
+                  letterSpacing:3.5, textAlign:'center', lineHeight:1.35,
                   background:'rgba(0,0,0,0.25)',
-                  padding:'6px 16px', borderRadius:8,
+                  padding:'5px 14px', borderRadius:8,
                   border:'1px solid rgba(255,255,255,0.12)',
                 }}>🏦<br/>BANKOPOLY</div>
 
-                {/* CSS Dice — no overflow, always correct value */}
                 <div
                   onClick={rolling || !!modal ? undefined : roll}
                   style={{
@@ -692,13 +681,11 @@ export default function BoardGame() {
                   }}
                   title={rolling ? 'Rolling…' : 'Click to roll'}
                 >
-                  {/* key = rollSeed forces remount so diceLand always fires */}
                   <Dice key={`d${rollSeed}`} value={diceVal} rolling={rolling}/>
                 </div>
 
-                {/* Roll status */}
                 <div style={{
-                  fontSize:10, fontWeight:700, letterSpacing:'0.6px',
+                  fontSize:9, fontWeight:700, letterSpacing:'0.5px',
                   color:'rgba(255,255,255,0.75)',
                   textShadow:'0 1px 4px rgba(0,0,0,0.5)',
                   textTransform:'uppercase',
@@ -706,45 +693,38 @@ export default function BoardGame() {
                   {rolling ? '🎲 Rolling…' : `Rolled ${diceVal} — tap to roll`}
                 </div>
 
-                {/* Owned properties chips */}
                 {propCount > 0 && (
                   <div style={{
-                    display:'flex', flexWrap:'wrap', gap:4,
-                    justifyContent:'center', maxWidth:200, padding:'0 10px',
+                    display:'flex', flexWrap:'wrap', gap:3,
+                    justifyContent:'center', maxWidth:190, padding:'0 8px',
                   }}>
                     {ownedTiles.map(id => (
                       <div key={id} style={{
                         background:'rgba(255,255,255,0.15)',
                         border:'1px solid rgba(255,255,255,0.22)',
-                        borderRadius:20, padding:'2px 9px',
-                        fontSize:9, fontWeight:800, color:'white',
-                        display:'flex', alignItems:'center', gap:3,
-                        textTransform:'uppercase', letterSpacing:'0.3px',
+                        borderRadius:18, padding:'2px 8px',
+                        fontSize:8, fontWeight:800, color:'white',
+                        display:'flex', alignItems:'center', gap:2,
+                        textTransform:'uppercase', letterSpacing:'0.2px',
                       }}>🏠 {TILES[id].label}</div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Tile rows */}
-              {/* TOP */}
               <div style={{position:'absolute',top:0,left:CORN,width:BS-CORN*2,height:CORN,display:'grid',gridTemplateColumns:`repeat(${N},1fr)`,gap:2,padding:2,boxSizing:'border-box'}}>
                 {TOP.map(id=><BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="top"/>)}
               </div>
-              {/* BOTTOM */}
               <div style={{position:'absolute',bottom:0,left:CORN,width:BS-CORN*2,height:CORN,display:'grid',gridTemplateColumns:`repeat(${N},1fr)`,gap:2,padding:2,boxSizing:'border-box'}}>
                 {BOT.map(id=><BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="bottom"/>)}
               </div>
-              {/* RIGHT */}
               <div style={{position:'absolute',right:0,top:CORN,width:CORN,height:BS-CORN*2,display:'grid',gridTemplateRows:`repeat(${N},1fr)`,gap:2,padding:2,boxSizing:'border-box'}}>
                 {RIGHT.map(id=><BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="right"/>)}
               </div>
-              {/* LEFT */}
               <div style={{position:'absolute',left:0,top:CORN,width:CORN,height:BS-CORN*2,display:'grid',gridTemplateRows:`repeat(${N},1fr)`,gap:2,padding:2,boxSizing:'border-box'}}>
                 {LEFT.map(id=><BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="left"/>)}
               </div>
 
-              {/* CORNERS */}
               <div style={{position:'absolute',top:0,left:0,width:CORN,height:CORN,padding:2,boxSizing:'border-box'}}><Corner icon="🎲" top="Free Parking" bg="#fefce8" border="#a16207"/></div>
               <div style={{position:'absolute',top:0,right:0,width:CORN,height:CORN,padding:2,boxSizing:'border-box'}}><Corner icon="❓" top="Chance" bg="#eff6ff" border="#1d4ed8"/></div>
               <div style={{position:'absolute',bottom:0,left:0,width:CORN,height:CORN,padding:2,boxSizing:'border-box'}}><Corner icon="🏁" top="Collect" bot="← GO" bg="#f0fdf4" border="#15803d"/></div>
@@ -753,17 +733,16 @@ export default function BoardGame() {
           </div>
         </div>
 
-        {/* RIGHT PANEL ──────────────────────────────────────────────────── */}
+        {/* RIGHT PANEL */}
         <div style={{
           display:'flex', flexDirection:'column',
-          alignItems:'center', gap:11, flexShrink:0, width:150,
+          alignItems:'center', gap:11, flexShrink:0,
         }}>
-          {/* GO ROLL button */}
           <button
             onClick={roll}
             disabled={rolling || !!modal}
             style={{
-              width:132, height:132, borderRadius:'50%',
+              width:126, height:126, borderRadius:'50%',
               background: rolling || modal
                 ? 'linear-gradient(135deg, #4b5563, #374151)'
                 : 'linear-gradient(145deg, #f87171, #dc2626)',
@@ -782,7 +761,7 @@ export default function BoardGame() {
               <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.22), transparent 60%)',pointerEvents:'none'}}/>
             )}
             <span style={{
-              fontSize: rolling ? 32 : 40,
+              fontSize: rolling ? 30 : 38,
               fontWeight:900, color:'white',
               textShadow:'0 3px 10px rgba(0,0,0,0.5)',
               fontFamily:'Georgia, serif', lineHeight:1,
@@ -791,13 +770,12 @@ export default function BoardGame() {
               {rolling ? '🎲' : 'GO'}
             </span>
             {!rolling && (
-              <span style={{fontSize:13, color:'rgba(255,255,255,0.9)', fontWeight:800, position:'relative', zIndex:1, marginTop:4, letterSpacing:'1px'}}>
+              <span style={{fontSize:12, color:'rgba(255,255,255,0.9)', fontWeight:800, position:'relative', zIndex:1, marginTop:3, letterSpacing:'0.8px'}}>
                 ROLL
               </span>
             )}
           </button>
 
-          {/* Stat cards */}
           {[
             {icon:'💵', label:'WALLET',     val:`₹${coins}`,          color:'#fbbf24'},
             {icon:'🏦', label:'SAVINGS',    val:`₹${savings}`,        color:'#34d399'},
@@ -808,7 +786,7 @@ export default function BoardGame() {
               background:'rgba(255,255,255,0.07)',
               border:'1px solid rgba(255,255,255,0.12)',
               borderRadius:14, padding:'9px 12px',
-              textAlign:'center', width:'100%',
+              textAlign:'center', width:140,
               backdropFilter:'blur(10px)',
               boxShadow:'0 2px 12px rgba(0,0,0,0.25)',
             }}>
@@ -818,23 +796,21 @@ export default function BoardGame() {
             </div>
           ))}
 
-          {/* Progress ring */}
           <div style={{position:'relative', width:62, height:62}}>
             <svg width="62" height="62" style={{transform:'rotate(-90deg)', position:'absolute', top:0, left:0}}>
               <circle cx="31" cy="31" r="24" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="5"/>
               <circle cx="31" cy="31" r="24" fill="none" stroke="#fbbf24" strokeWidth="5" strokeLinecap="round"
                 strokeDasharray={`${2*Math.PI*24}`}
-                strokeDashoffset={`${2*Math.PI*24*(1 - pos/20)}`}
+                strokeDashoffset={`${2*Math.PI*24*(1 - (pos+1)/20)}`}
                 style={{transition:'stroke-dashoffset 0.5s ease'}}/>
             </svg>
             <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
-              <span style={{fontSize:14, fontWeight:900, color:'white', lineHeight:1}}>{pos}</span>
+              <span style={{fontSize:14, fontWeight:900, color:'white', lineHeight:1}}>{pos+1}</span>
               <span style={{fontSize:7, color:'rgba(255,255,255,0.4)', fontWeight:600, lineHeight:1}}>/20</span>
             </div>
           </div>
         </div>
 
-        {/* MODAL */}
         {modal && (
           <Modal
             tile={modal}
@@ -853,7 +829,7 @@ export default function BoardGame() {
             onClose={() => setModal(null)}
           />
         )}
-      </div>{/* end MAIN */}
+      </div>
 
       <style>{`
         @keyframes fi {
