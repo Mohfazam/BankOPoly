@@ -1,39 +1,36 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
-import * as THREE from 'three';
+import React, { useState } from 'react';
 import { Town3D } from './Town3D';
 
+// ─── TYPES & DATA ─────────────────────────────────────────────────────────────
 type TileType = 'start'|'save'|'interest'|'scam'|'budget'|'property'|'loan'|'normal';
 interface Tile { id:number; type:TileType; label:string; icon:string; price:number; rent:number; }
 
-// Each property has a price to buy and rent charged when you land on it again
 const TILES: Tile[] = [
-  {id:0,  type:'start',    label:'GO',      icon:'🏁', price:0,   rent:0},
-  {id:1,  type:'save',     label:'SAVE',    icon:'🏦', price:0,   rent:0},
-  {id:2,  type:'interest', label:'EARN',    icon:'💰', price:0,   rent:0},
-  {id:3,  type:'property', label:'PARK ST', icon:'🏠', price:100, rent:25},
-  {id:4,  type:'scam',     label:'SCAM',    icon:'⚠️', price:0,   rent:0},
-  {id:5,  type:'budget',   label:'BUDGET',  icon:'📚', price:0,   rent:0},
-  {id:6,  type:'loan',     label:'LOAN',    icon:'📋', price:0,   rent:0},
-  {id:7,  type:'property', label:'HILL RD', icon:'🏠', price:120, rent:30},
-  {id:8,  type:'interest', label:'EARN',    icon:'💰', price:0,   rent:0},
-  {id:9,  type:'normal',   label:'FREE',    icon:'⭐', price:0,   rent:0},
-  {id:10, type:'budget',   label:'BUDGET',  icon:'📚', price:0,   rent:0},
-  {id:11, type:'save',     label:'SAVE',    icon:'🏦', price:0,   rent:0},
-  {id:12, type:'loan',     label:'LOAN',    icon:'📋', price:0,   rent:0},
-  {id:13, type:'scam',     label:'SCAM',    icon:'⚠️', price:0,   rent:0},
-  {id:14, type:'property', label:'MG ROAD', icon:'🏠', price:150, rent:40},
-  {id:15, type:'interest', label:'EARN',    icon:'💰', price:0,   rent:0},
-  {id:16, type:'budget',   label:'BUDGET',  icon:'📚', price:0,   rent:0},
-  {id:17, type:'normal',   label:'FREE',    icon:'⭐', price:0,   rent:0},
-  {id:18, type:'save',     label:'SAVE',    icon:'🏦', price:0,   rent:0},
-  {id:19, type:'property', label:'MALL AVE',icon:'🏠', price:180, rent:50},
+  {id:0,  type:'start',    label:'GO',       icon:'🏁', price:0,   rent:0 },
+  {id:1,  type:'save',     label:'SAVE',     icon:'🏦', price:0,   rent:0 },
+  {id:2,  type:'interest', label:'EARN',     icon:'💰', price:0,   rent:0 },
+  {id:3,  type:'property', label:'PARK ST',  icon:'🏠', price:100, rent:25},
+  {id:4,  type:'scam',     label:'SCAM',     icon:'⚠️', price:0,   rent:0 },
+  {id:5,  type:'budget',   label:'BUDGET',   icon:'📚', price:0,   rent:0 },
+  {id:6,  type:'loan',     label:'LOAN',     icon:'📋', price:0,   rent:0 },
+  {id:7,  type:'property', label:'HILL RD',  icon:'🏠', price:120, rent:30},
+  {id:8,  type:'interest', label:'EARN',     icon:'💰', price:0,   rent:0 },
+  {id:9,  type:'normal',   label:'FREE',     icon:'⭐', price:0,   rent:0 },
+  {id:10, type:'budget',   label:'BUDGET',   icon:'📚', price:0,   rent:0 },
+  {id:11, type:'save',     label:'SAVE',     icon:'🏦', price:0,   rent:0 },
+  {id:12, type:'loan',     label:'LOAN',     icon:'📋', price:0,   rent:0 },
+  {id:13, type:'scam',     label:'SCAM',     icon:'⚠️', price:0,   rent:0 },
+  {id:14, type:'property', label:'MG ROAD',  icon:'🏠', price:150, rent:40},
+  {id:15, type:'interest', label:'EARN',     icon:'💰', price:0,   rent:0 },
+  {id:16, type:'budget',   label:'BUDGET',   icon:'📚', price:0,   rent:0 },
+  {id:17, type:'normal',   label:'FREE',     icon:'⭐', price:0,   rent:0 },
+  {id:18, type:'save',     label:'SAVE',     icon:'🏦', price:0,   rent:0 },
+  {id:19, type:'property', label:'MALL AVE', icon:'🏠', price:180, rent:50},
 ];
 
-const GO_SALARY   = 200; // collected every time you pass or land on GO
+const GO_SALARY   = 200;
 const LOAN_AMOUNT = 100;
 const LOAN_REPAY  = 120;
 
@@ -53,70 +50,165 @@ const FILL: Record<TileType,string> = {
   loan:'#fce7f3',  normal:'#f8fafc',
 };
 const DARK: Record<TileType,string> = {
-  start:'#b8860b', property:'#c41e3a', loan:'#6a0572', interest:'#0047ab',
-  save:'#006994',  normal:'#2d5016',   budget:'#9b1d20', scam:'#8b0000',
+  start:'#15803d', property:'#b91c1c', loan:'#6b21a8', interest:'#1e40af',
+  save:'#1d4ed8',  normal:'#374151',   budget:'#6b21a8', scam:'#991b1b',
 };
 
-// ─── DICE ────────────────────────────────────────────────────────────────────
-function DiceMesh({ rolling, value }:{ rolling:boolean; value:number }) {
-  const ref = useRef<THREE.Group>(null);
-  const tgt = useRef(new THREE.Euler());
-  const t   = useRef(0);
-  useEffect(()=>{
-    const m:Record<number,[number,number,number]> = {
-      1:[0,0,0],2:[0,Math.PI/2,0],3:[-Math.PI/2,0,0],
-      4:[Math.PI/2,0,0],5:[0,-Math.PI/2,0],6:[0,Math.PI,0],
-    };
-    const [x,y,z]=m[value]??[0,0,0]; tgt.current.set(x,y,z);
-  },[value]);
-  useFrame((_,dt)=>{
-    if(!ref.current) return; t.current+=dt;
-    if(rolling){
-      ref.current.rotation.x+=dt*20; ref.current.rotation.y+=dt*25;
-      ref.current.position.y=Math.abs(Math.sin(t.current*14))*0.5;
-    } else {
-      ref.current.rotation.x+=(tgt.current.x-ref.current.rotation.x)*0.15;
-      ref.current.rotation.y+=(tgt.current.y-ref.current.rotation.y)*0.15;
-      ref.current.rotation.z+=(tgt.current.z-ref.current.rotation.z)*0.15;
-      ref.current.position.y+=(0-ref.current.position.y)*0.15;
-    }
-  });
-  const dot=(p:[number,number,number])=>(<mesh key={p.join()} position={p}><sphereGeometry args={[0.14,12,12]}/><meshStandardMaterial color="#111" roughness={0.3}/></mesh>);
-  const d=0.44,f=0.93;
-  return (<group ref={ref}><RoundedBox args={[1.85,1.85,1.85]} radius={0.16} smoothness={4} castShadow><meshStandardMaterial color="#fff" roughness={0.18} metalness={0.07}/></RoundedBox>{dot([0,0,f])}{dot([f,d,-d])}{dot([f,-d,d])}{dot([-d,f,d])}{dot([0,f,0])}{dot([d,f,-d])}{dot([-d,-f,-d])}{dot([d,-f,-d])}{dot([-d,-f,d])}{dot([d,-f,d])}{dot([-f,d,d])}{dot([-f,-d,d])}{dot([-f,0,0])}{dot([-f,d,-d])}{dot([-f,-d,-d])}{dot([-d,d,-f])}{dot([d,d,-f])}{dot([-d,0,-f])}{dot([d,0,-f])}{dot([-d,-d,-f])}{dot([d,-d,-f])}</group>);
+// ─── CSS DICE ─────────────────────────────────────────────────────────────────
+// Standard die dot layout using a 3×3 grid of boolean slots
+const F=false, T=true;
+const FACES: Record<number, boolean[]> = {
+  1: [F,F,F, F,T,F, F,F,F],
+  2: [F,F,T, F,F,F, T,F,F],
+  3: [F,F,T, F,T,F, T,F,F],
+  4: [T,F,T, F,F,F, T,F,T],
+  5: [T,F,T, F,T,F, T,F,T],
+  6: [T,F,T, T,F,T, T,F,T],
+};
+
+function Dice({ value, rolling }: { value:number; rolling:boolean }) {
+  const dots = FACES[value] ?? FACES[1];
+  return (
+    <div style={{
+      width: 84, height: 84,
+      borderRadius: 18,
+      background: 'white',
+      // Crisp glow when rolling, solid shadow when resting
+      boxShadow: rolling
+        ? '0 0 0 3px #fbbf24, 0 0 28px rgba(251,191,36,0.7), 0 6px 20px rgba(0,0,0,0.4)'
+        : '0 6px 0 rgba(0,0,0,0.3), 0 10px 28px rgba(0,0,0,0.4)',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gridTemplateRows: 'repeat(3, 1fr)',
+      padding: 13,
+      gap: 4,
+      // animation key changes on each render during rolling so it always replays
+      animation: rolling ? 'diceRoll 0.13s linear infinite' : 'diceLand 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+      transition: 'box-shadow 0.25s ease',
+      userSelect: 'none',
+    }}>
+      {dots.map((on, i) => (
+        <div key={i} style={{display:'flex', alignItems:'center', justifyContent:'center'}}>
+          {on && (
+            <div style={{
+              width: 13, height: 13,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 35% 30%, #374151, #0f172a)',
+              boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.15), 0 1px 3px rgba(0,0,0,0.4)',
+            }}/>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
-// ─── BOARD TILE ──────────────────────────────────────────────────────────────
-function BTile({ tile, active, owned, side }:{ tile:Tile; active:boolean; owned:boolean; side:'top'|'bottom'|'left'|'right' }) {
-  const bg   = FILL[tile.type];
-  const dark = DARK[tile.type];
-  const isH  = side==='top'||side==='bottom';
-  const strip: React.CSSProperties =
-    side==='top'    ? {top:0,left:0,right:0,height:7,background:dark} :
-    side==='bottom' ? {bottom:0,left:0,right:0,height:7,background:dark} :
-    side==='left'   ? {left:0,top:0,bottom:0,width:7,background:dark} :
-                      {right:0,top:0,bottom:0,width:7,background:dark};
-  const pad = side==='top'?'11px 3px 3px':side==='bottom'?'3px 3px 11px':side==='left'?'3px 3px 3px 11px':'3px 11px 3px 3px';
+// ─── BOARD TILE ───────────────────────────────────────────────────────────────
+function BTile({ tile, active, owned, side }: {
+  tile:Tile; active:boolean; owned:boolean; side:'top'|'bottom'|'left'|'right';
+}) {
+  const isH  = side === 'top' || side === 'bottom';
+  const dark = (owned && tile.type === 'property') ? '#92400e' : DARK[tile.type];
+  const bg   = (owned && tile.type === 'property') ? '#fef3c7' : FILL[tile.type];
+
+  const stripPos: React.CSSProperties =
+    side === 'top'    ? {top:0, left:0, right:0, height:6}  :
+    side === 'bottom' ? {bottom:0, left:0, right:0, height:6} :
+    side === 'left'   ? {left:0, top:0, bottom:0, width:6}  :
+                        {right:0, top:0, bottom:0, width:6};
+
+  const contentPad =
+    side === 'top'    ? '9px 2px 3px' :
+    side === 'bottom' ? '3px 2px 9px' :
+    side === 'left'   ? '3px 3px 3px 9px' :
+                        '3px 9px 3px 3px';
 
   return (
-    <div style={{width:'100%',height:'100%',background:owned?'#fef9c3':bg,border:`2.5px solid ${owned?'#ca8a04':dark}`,borderRadius:7,boxShadow:`inset 0 1px 3px rgba(255,255,255,0.6),0 3px 8px rgba(0,0,0,0.2)`,position:'relative',overflow:'hidden',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',boxSizing:'border-box',transition:'all 0.2s ease'}}>
-      <div style={{position:'absolute',background:owned?'#ca8a04':dark,...strip}}/>
-      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:0.5,padding:pad,width:'100%',height:'100%',boxSizing:'border-box',writingMode:isH?'horizontal-tb':'vertical-lr',transform:side==='left'?'scaleX(-1)':'none'}}>
-        <span style={{fontSize:isH?32:27,lineHeight:1,filter:active?'drop-shadow(0 2px 5px rgba(0,0,0,0.4))':'drop-shadow(0 1px 2px rgba(0,0,0,0.1))'}}>{tile.icon}</span>
-        <span style={{fontSize:isH?9:8,fontWeight:900,color:owned?'#92400e':dark,letterSpacing:'0.3px',textAlign:'center',fontFamily:'system-ui,sans-serif',lineHeight:1.1,textTransform:'uppercase'}}>{tile.label}</span>
-        {owned&&tile.type==='property'&&<span style={{fontSize:isH?7:7,fontWeight:700,color:'#ca8a04',lineHeight:1}}>★ YOURS</span>}
+    <div style={{
+      width:'100%', height:'100%',
+      background: bg,
+      border: `2px solid ${dark}`,
+      borderRadius: 6,
+      position: 'relative',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxSizing: 'border-box',
+      transition: 'all 0.2s',
+      boxShadow: owned && tile.type === 'property'
+        ? '0 0 0 1px rgba(217,119,6,0.3) inset'
+        : undefined,
+    }}>
+      {/* Colour strip */}
+      <div style={{position:'absolute', background: dark, ...stripPos}}/>
+
+      {/* Gold shimmer on owned properties */}
+      {owned && tile.type === 'property' && (
+        <div style={{
+          position:'absolute', inset:0, pointerEvents:'none',
+          background:'linear-gradient(135deg, rgba(251,191,36,0.12) 0%, transparent 55%)',
+        }}/>
+      )}
+
+      {/* Content */}
+      <div style={{
+        display:'flex', flexDirection:'column',
+        alignItems:'center', justifyContent:'center',
+        gap: 1,
+        padding: contentPad,
+        width:'100%', height:'100%',
+        boxSizing:'border-box',
+        writingMode: isH ? 'horizontal-tb' : 'vertical-lr',
+        transform: side === 'left' ? 'scaleX(-1)' : 'none',
+      }}>
+        <span style={{
+          fontSize: isH ? 28 : 24,
+          lineHeight: 1,
+          filter: active
+            ? 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))'
+            : 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))',
+        }}>{tile.icon}</span>
+        <span style={{
+          fontSize: isH ? 8 : 7,
+          fontWeight: 800,
+          color: dark,
+          letterSpacing: '0.2px',
+          textAlign: 'center',
+          fontFamily: 'system-ui, sans-serif',
+          lineHeight: 1.1,
+          textTransform: 'uppercase',
+        }}>{tile.label}</span>
+        {owned && tile.type === 'property' && (
+          <span style={{fontSize:5, fontWeight:800, color:'#b45309', lineHeight:1}}>★ MINE</span>
+        )}
       </div>
-      {/* Current position pin */}
-      {active&&(
-        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',zIndex:20,pointerEvents:'none',background:'rgba(255,255,200,0.82)',borderRadius:6,backdropFilter:'blur(2px)'}}>
-          <div style={{animation:'pinPulse 1.5s ease-in-out infinite',filter:'drop-shadow(0 3px 8px rgba(0,0,0,0.4))',display:'flex',flexDirection:'column',alignItems:'center',gap:1}}>
-            <svg width="36" height="44" viewBox="0 0 22 30" fill="none">
-              <ellipse cx="11" cy="28" rx="8" ry="3" fill="rgba(0,0,0,0.2)"/>
-              <path d="M11 1C6.5 1 3 4.8 3 9.5C3 15.5 8 21 11 24.5C14 21 19 15.5 19 9.5C19 4.8 15.5 1 11 1Z" fill="#ff0000"/>
-              <circle cx="11" cy="9.5" r="4.5" fill="white" opacity="0.99"/>
-              <circle cx="11" cy="9.5" r="2.5" fill="#ff0000"/>
+
+      {/* Player location pin */}
+      {active && (
+        <div style={{
+          position:'absolute', inset:0,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          zIndex:20, pointerEvents:'none',
+          background:'rgba(255,255,210,0.88)',
+          backdropFilter:'blur(3px)',
+          borderRadius: 5,
+        }}>
+          <div style={{
+            animation:'pinPulse 1.4s ease-in-out infinite',
+            filter:'drop-shadow(0 3px 8px rgba(220,38,38,0.5))',
+            display:'flex', flexDirection:'column', alignItems:'center', gap:1,
+          }}>
+            <svg width="30" height="38" viewBox="0 0 22 30" fill="none">
+              <ellipse cx="11" cy="28" rx="7" ry="2.5" fill="rgba(0,0,0,0.2)"/>
+              <path d="M11 1C6.5 1 3 4.8 3 9.5C3 15.5 8 21 11 24.5C14 21 19 15.5 19 9.5C19 4.8 15.5 1 11 1Z" fill="#ef4444"/>
+              <path d="M11 1C6.5 1 3 4.8 3 9.5C3 15.5 8 21 11 24.5C14 21 19 15.5 19 9.5C19 4.8 15.5 1 11 1Z" fill="url(#pG)"/>
+              <defs><linearGradient id="pG" x1="6" y1="2" x2="15" y2="12"><stop offset="0%" stopColor="rgba(255,255,255,0.3)"/><stop offset="100%" stopColor="transparent"/></linearGradient></defs>
+              <circle cx="11" cy="9.5" r="4" fill="white" opacity="0.95"/>
+              <circle cx="11" cy="9.5" r="2.2" fill="#ef4444"/>
             </svg>
-            <span style={{fontSize:7,fontWeight:900,color:'#c41e3a'}}>YOU</span>
+            <span style={{fontSize:6, fontWeight:900, color:'#dc2626', letterSpacing:'0.3px'}}>YOU</span>
           </div>
         </div>
       )}
@@ -124,453 +216,626 @@ function BTile({ tile, active, owned, side }:{ tile:Tile; active:boolean; owned:
   );
 }
 
-// ─── CORNER ──────────────────────────────────────────────────────────────────
-function Corner({ icon,top,bot,bg,border }:{ icon:string;top:string;bot?:string;bg:string;border:string }) {
+// ─── CORNER ───────────────────────────────────────────────────────────────────
+function Corner({ icon, top, bot, bg, border }: {
+  icon:string; top:string; bot?:string; bg:string; border:string;
+}) {
   return (
-    <div style={{width:'100%',height:'100%',background:bg,border:`2px solid ${border}`,borderRadius:6,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:2,boxSizing:'border-box'}}>
-      <span style={{fontSize:16}}>{icon}</span>
-      <span style={{fontSize:7,fontWeight:900,color:border,textAlign:'center',fontFamily:'system-ui,sans-serif',lineHeight:1.3}}>{top}</span>
-      {bot&&<span style={{fontSize:8,fontWeight:900,color:border,fontFamily:'Georgia,serif'}}>{bot}</span>}
+    <div style={{
+      width:'100%', height:'100%', background:bg,
+      border:`2px solid ${border}`, borderRadius:6,
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      gap:3, boxSizing:'border-box',
+    }}>
+      <span style={{fontSize:20}}>{icon}</span>
+      <span style={{fontSize:7, fontWeight:900, color:border, textAlign:'center', fontFamily:'system-ui,sans-serif', lineHeight:1.3, textTransform:'uppercase'}}>{top}</span>
+      {bot && <span style={{fontSize:9, fontWeight:900, color:border, fontFamily:'Georgia,serif'}}>{bot}</span>}
     </div>
   );
 }
 
-// ─── STYLES ──────────────────────────────────────────────────────────────────
-const P: React.CSSProperties = {color:'#4b5563',fontSize:14,lineHeight:1.65,textAlign:'center',margin:'0 0 12px',fontFamily:'system-ui,sans-serif'};
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+const P: React.CSSProperties = {
+  color:'#4b5563', fontSize:14, lineHeight:1.65, textAlign:'center',
+  margin:'0 0 14px', fontFamily:'system-ui, sans-serif',
+};
 
-// ─── MODAL ───────────────────────────────────────────────────────────────────
 interface ModalProps {
-  tile: Tile;
-  coins: number;
-  savings: number;
-  loanActive: boolean;
-  loanRemaining: number;
-  ownedTiles: number[];
-  lapBonus: number | null;
-  rentPaid: number | null;
-  setCoins: (n:number)=>void;
-  setSavings: (n:number)=>void;
-  setLoanActive: (b:boolean)=>void;
-  setLoanRemaining: (n:number)=>void;
-  setOwnedTiles: (ids:number[])=>void;
-  onClose: ()=>void;
+  tile:Tile; coins:number; savings:number;
+  loanActive:boolean; loanRemaining:number; ownedTiles:number[];
+  lapBonus:number|null; rentEarned:number|null;
+  setCoins:(n:number)=>void; setSavings:(n:number)=>void;
+  setLoanActive:(b:boolean)=>void; setLoanRemaining:(n:number)=>void;
+  setOwnedTiles:(ids:number[])=>void; onClose:()=>void;
 }
 
-function Modal({ tile,coins,savings,loanActive,loanRemaining,ownedTiles,lapBonus,rentPaid,setCoins,setSavings,setLoanActive,setLoanRemaining,setOwnedTiles,onClose }:ModalProps) {
-  const ac = ACCENT[tile.type];
-  const bg = FILL[tile.type];
+function Modal({
+  tile, coins, savings, loanActive, loanRemaining, ownedTiles,
+  lapBonus, rentEarned,
+  setCoins, setSavings, setLoanActive, setLoanRemaining, setOwnedTiles, onClose,
+}: ModalProps) {
+  const ac      = ACCENT[tile.type];
+  const bg      = FILL[tile.type];
   const isOwned = ownedTiles.includes(tile.id);
 
-  const Btn=({onClick,disabled,color,children}:any)=>(
-    <button onClick={onClick} disabled={disabled} style={{flex:1,padding:'14px 10px',borderRadius:14,border:'none',cursor:disabled?'not-allowed':'pointer',background:disabled?'#e5e7eb':color,color:disabled?'#9ca3af':'white',fontWeight:800,fontSize:14,lineHeight:1.3,boxShadow:disabled?'none':`0 4px 0 rgba(0,0,0,0.2)`,fontFamily:'system-ui,sans-serif'}}>{children}</button>
+  const Btn = ({ onClick, disabled, color, children }: any) => (
+    <button onClick={onClick} disabled={disabled} style={{
+      flex:1, padding:'14px 10px', borderRadius:14, border:'none',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      background: disabled ? '#e5e7eb' : color,
+      color: disabled ? '#9ca3af' : 'white',
+      fontWeight:800, fontSize:14, lineHeight:1.3,
+      boxShadow: disabled ? 'none' : `0 4px 0 rgba(0,0,0,0.2)`,
+      fontFamily:'system-ui, sans-serif',
+      transition:'all 0.12s ease',
+    }}>{children}</button>
   );
-  const Info=({l,v,c}:{l:string;v:string;c?:string})=>(
-    <div style={{display:'flex',justifyContent:'space-between',fontSize:14,padding:'3px 0'}}>
-      <span style={{color:'#6b7280'}}>{l}</span><strong style={{color:c||'#111'}}>{v}</strong>
-    </div>
-  );
-  const Box=({children}:any)=>(
-    <div style={{background:bg,borderRadius:12,padding:'12px 14px',marginBottom:12}}>{children}</div>
-  );
-  const Banner=({emoji,text,sub,color}:{emoji:string;text:string;sub?:string;color:string})=>(
-    <div style={{background:color+'18',border:`1.5px solid ${color}44`,borderRadius:10,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10}}>
-      <span style={{fontSize:22}}>{emoji}</span>
-      <div><div style={{fontWeight:800,fontSize:14,color}}>{text}</div>{sub&&<div style={{fontSize:11,color:'#6b7280'}}>{sub}</div>}</div>
+
+  const Info = ({ l, v, c }: {l:string; v:string; c?:string}) => (
+    <div style={{display:'flex', justifyContent:'space-between', fontSize:14, padding:'5px 0', borderBottom:'1px solid rgba(0,0,0,0.05)'}}>
+      <span style={{color:'#6b7280'}}>{l}</span>
+      <strong style={{color: c||'#111'}}>{v}</strong>
     </div>
   );
 
-  const body=()=>{
-    switch(tile.type){
+  const Box = ({ children }: any) => (
+    <div style={{background:bg, border:`1px solid ${ac}22`, borderRadius:12, padding:'12px 14px', marginBottom:14}}>
+      {children}
+    </div>
+  );
 
-      // ── GO ──────────────────────────────────────────────────────────────────
+  const Banner = ({ emoji, text, sub, color }: {emoji:string; text:string; sub?:string; color:string}) => (
+    <div style={{
+      background:`${color}14`, border:`1.5px solid ${color}3a`,
+      borderRadius:12, padding:'11px 14px', marginBottom:14,
+      display:'flex', alignItems:'center', gap:12,
+    }}>
+      <span style={{fontSize:24, flexShrink:0}}>{emoji}</span>
+      <div>
+        <div style={{fontWeight:800, fontSize:15, color}}>{text}</div>
+        {sub && <div style={{fontSize:11, color:'#6b7280', marginTop:2}}>{sub}</div>}
+      </div>
+    </div>
+  );
+
+  const body = () => {
+    switch (tile.type) {
+
       case 'start':
-        return(<>
-          {lapBonus!==null&&<Banner emoji="🎉" text={`Collected ₹${lapBonus} salary!`} sub="You passed GO — payday!" color="#16a34a"/>}
-          <p style={P}>Every time you pass or land on GO you collect your salary. Keep lapping to grow your wealth!</p>
-          <Box><div style={{textAlign:'center',fontSize:22,fontWeight:900,color:ac}}>+₹{GO_SALARY} every lap 🏁</div></Box>
-          <Btn onClick={onClose} color={ac}>Nice! Keep rolling →</Btn>
+        return (<>
+          {lapBonus !== null && (
+            <Banner emoji="🎉" text={`+₹${lapBonus} salary collected!`} sub="You completed a lap — payday!" color="#16a34a"/>
+          )}
+          <p style={P}>Every time you pass or land on GO you collect your ₹{GO_SALARY} salary. Keep lapping to build wealth!</p>
+          <Box><div style={{textAlign:'center', fontSize:22, fontWeight:900, color:ac}}>₹{GO_SALARY} salary per lap 🏁</div></Box>
+          <Btn onClick={onClose} color={ac}>Collect &amp; Roll →</Btn>
         </>);
 
-      // ── SAVE ────────────────────────────────────────────────────────────────
       case 'save':
-        return(<>
-          <p style={P}>Deposit ₹50 into savings. Banks keep your money safe and growing!</p>
-          <Box><Info l="Wallet" v={`₹${coins}`}/><Info l="Savings" v={`₹${savings}`}/></Box>
-          <Btn onClick={()=>{if(coins>=50){setCoins(coins-50);setSavings(savings+50);}onClose();}} disabled={coins<50} color={ac}>
-            {coins>=50?'Deposit ₹50 🏦':'Not Enough Coins'}
+        return (<>
+          <p style={P}>Deposit ₹50 into savings. It stays safe and earns you 10% interest each time you land on EARN tiles!</p>
+          <Box>
+            <Info l="Wallet" v={`₹${coins}`}/>
+            <Info l="Savings" v={`₹${savings}`}/>
+            {coins >= 50 && <Info l="After deposit" v={`₹${coins-50} wallet · ₹${savings+50} saved`} c="#2563eb"/>}
+          </Box>
+          <Btn onClick={()=>{if(coins>=50){setCoins(coins-50); setSavings(savings+50);} onClose();}} disabled={coins<50} color={ac}>
+            {coins>=50 ? 'Deposit ₹50 🏦' : 'Not Enough Coins ✗'}
           </Btn>
         </>);
 
-      // ── INTEREST ────────────────────────────────────────────────────────────
-      case 'interest':{
-        const b=Math.floor(savings*0.1);
-        return(<>
-          <p style={P}>Your savings earned 10% interest — this is how money grows while you sleep!</p>
+      case 'interest': {
+        const b = Math.floor(savings * 0.1);
+        return (<>
+          <p style={P}>Your savings earned <strong>10% interest</strong> — money growing while you do nothing. That's the power of saving!</p>
           <Box>
-            <div style={{textAlign:'center'}}>
-              <div style={{fontSize:32,fontWeight:900,color:ac}}>+₹{b}</div>
-              <div style={{fontSize:12,color:'#6b7280'}}>10% on ₹{savings} saved</div>
+            <div style={{textAlign:'center', padding:'6px 0'}}>
+              <div style={{fontSize:36, fontWeight:900, color: b>0 ? ac : '#9ca3af'}}>+₹{b}</div>
+              <div style={{fontSize:12, color:'#6b7280', marginTop:3}}>10% of ₹{savings} in savings</div>
             </div>
           </Box>
-          {b===0&&<p style={{...P,color:'#dc2626',fontSize:12}}>⚠️ No savings yet — deposit first to earn interest!</p>}
-          <Btn onClick={()=>{setSavings(savings+b);onClose();}} color={ac} disabled={b===0}>
-            {b>0?'Collect Interest 💰':'Nothing to collect'}
+          {b === 0 && <p style={{...P, color:'#dc2626', fontSize:12, margin:'0 0 10px'}}>⚠️ Save some coins first on a SAVE tile to earn interest!</p>}
+          <Btn onClick={()=>{if(b>0) setSavings(savings+b); onClose();}} color={ac} disabled={b===0}>
+            {b > 0 ? 'Collect Interest 💰' : 'Nothing yet — save first'}
           </Btn>
         </>);
       }
 
-      // ── SCAM ────────────────────────────────────────────────────────────────
       case 'scam':
-        return(<>
-          <p style={P}>A stranger called asking for your OTP and bank details. What do you do?</p>
-          <Box><div style={{fontSize:13,color:'#6b7280',lineHeight:1.7}}>⚠️ Share details → Lose ₹100<br/>✅ Ignore &amp; report → Earn ₹50 reward</div></Box>
-          <div style={{display:'flex',gap:10}}>
-            <Btn onClick={()=>{setCoins(Math.max(0,coins-100));onClose();}} color="#dc2626">
-              Share Details<br/><span style={{fontSize:11,fontWeight:500}}>-₹100 😱</span>
+        return (<>
+          <p style={P}>A stranger called asking for your bank OTP and account number. What do you do?</p>
+          <Box>
+            <div style={{fontSize:13, color:'#6b7280', lineHeight:1.9}}>
+              ⚠️ <strong>Share OTP</strong> → Scammer drains ₹100<br/>
+              ✅ <strong>Ignore &amp; report</strong> → ₹50 reward from bank
+            </div>
+          </Box>
+          <div style={{display:'flex', gap:10}}>
+            <Btn onClick={()=>{setCoins(Math.max(0, coins-100)); onClose();}} color="#dc2626">
+              Share OTP<br/><span style={{fontSize:11,fontWeight:500}}>-₹100 😱</span>
             </Btn>
-            <Btn onClick={()=>{setCoins(coins+50);onClose();}} color="#16a34a">
+            <Btn onClick={()=>{setCoins(coins+50); onClose();}} color="#16a34a">
               Ignore &amp; Report<br/><span style={{fontSize:11,fontWeight:500}}>+₹50 ✅</span>
             </Btn>
           </div>
         </>);
 
-      // ── BUDGET ──────────────────────────────────────────────────────────────
       case 'budget':
-        return(<>
-          <p style={P}>Time to make a smart money choice — <strong>Need</strong> vs <strong>Want</strong>!</p>
-          <Box><Info l="Your Wallet" v={`₹${coins}`}/></Box>
-          <div style={{display:'flex',gap:10}}>
-            <Btn onClick={()=>{if(coins>=100)setCoins(coins-100);onClose();}} disabled={coins<100} color="#ea580c">
+        return (<>
+          <p style={P}>Smart budgeting — choose between a <strong>Want</strong> and a <strong>Need</strong>!</p>
+          <Box><Info l="Your wallet" v={`₹${coins}`}/></Box>
+          <div style={{display:'flex', gap:10}}>
+            <Btn onClick={()=>{if(coins>=100) setCoins(coins-100); onClose();}} disabled={coins<100} color="#ea580c">
               🚲 Buy Toy<br/><span style={{fontSize:11,fontWeight:500}}>-₹100 (Want)</span>
             </Btn>
-            <Btn onClick={()=>{setSavings(savings+50);onClose();}} color="#7c3aed">
+            <Btn onClick={()=>{setSavings(savings+50); onClose();}} color="#7c3aed">
               📚 School Fund<br/><span style={{fontSize:11,fontWeight:500}}>+₹50 Saved ✅</span>
             </Btn>
           </div>
         </>);
 
-      // ── PROPERTY ────────────────────────────────────────────────────────────
       case 'property':
-        // Already owned by YOU — just show info
-        if(isOwned){
-          return(<>
-            <Banner emoji="🏠" text="You own this property!" sub={`Rent ₹${tile.rent} charged to others`} color="#ea580c"/>
-            <p style={P}>This is your property — <strong>{tile.label}</strong>. Other players pay you ₹{tile.rent} rent when they land here.</p>
-            <Box>
-              <Info l="Property value" v={`₹${tile.price}`}/>
-              <Info l="Rent earned per visit" v={`₹${tile.rent}`} c="#16a34a"/>
-            </Box>
-            <Btn onClick={onClose} color={ac}>Nice! 🏠</Btn>
-          </>);
-        }
-        // You land here and rent is due — would be opponent in multiplayer, but for solo we skip rent
-        return(<>
-          <p style={P}>A property is available — buy it to earn rent every time you land here again!</p>
+        if (isOwned) return (<>
+          <Banner emoji="🏠" text="You own this property!" sub={`Earns ₹${tile.rent} rent each re-visit`} color="#ea580c"/>
+          {rentEarned !== null && rentEarned > 0 && (
+            <Banner emoji="💰" text={`Collected ₹${rentEarned} rent!`} sub="Your property is paying off" color="#16a34a"/>
+          )}
           <Box>
             <Info l="Property" v={tile.label}/>
-            <Info l="Price" v={`₹${tile.price}`}/>
-            <Info l="Rent (per visit)" v={`₹${tile.rent}`} c="#16a34a"/>
-            <Info l="Your wallet" v={`₹${coins}`}/>
-            {loanActive&&<div style={{fontSize:11,color:'#dc2626',marginTop:6}}>⚠️ Active loan: ₹{loanRemaining} remaining</div>}
+            <Info l="Paid" v={`₹${tile.price}`}/>
+            <Info l="Rent per visit" v={`₹${tile.rent}`} c="#16a34a"/>
           </Box>
-          <div style={{display:'flex',gap:10}}>
+          <Btn onClick={onClose} color={ac}>My property! 🏠</Btn>
+        </>);
+        return (<>
+          <p style={P}>Buy <strong>{tile.label}</strong> to earn ₹{tile.rent} rent every future visit — own property, build wealth!</p>
+          <Box>
+            <Info l="Price" v={`₹${tile.price}`}/>
+            <Info l="Rent per visit" v={`₹${tile.rent}`} c="#16a34a"/>
+            <Info l="Your wallet" v={`₹${coins}`}/>
+            {loanActive && <div style={{fontSize:11, color:'#dc2626', marginTop:7, fontWeight:600}}>⚠️ Active loan: ₹{loanRemaining} still owed</div>}
+          </Box>
+          <div style={{display:'flex', gap:10}}>
             <Btn onClick={()=>{
-              if(coins>=tile.price){
-                setCoins(coins-tile.price);
-                setOwnedTiles([...ownedTiles, tile.id]);
-              }
+              if(coins >= tile.price){setCoins(coins-tile.price); setOwnedTiles([...ownedTiles, tile.id]);}
               onClose();
-            }} disabled={coins<tile.price} color="#ea580c">
+            }} disabled={coins < tile.price} color="#ea580c">
               🏠 Buy Now<br/><span style={{fontSize:11,fontWeight:500}}>-₹{tile.price}</span>
             </Btn>
             <Btn onClick={()=>{
-              if(!loanActive){
-                setCoins(coins+LOAN_AMOUNT);
-                setLoanActive(true);
-                setLoanRemaining(LOAN_REPAY);
-              }
+              if(!loanActive){setCoins(coins+LOAN_AMOUNT); setLoanActive(true); setLoanRemaining(LOAN_REPAY);}
               onClose();
             }} disabled={loanActive} color="#db2777">
-              🏦 Take Loan<br/><span style={{fontSize:11,fontWeight:500}}>+₹{LOAN_AMOUNT} (repay ₹{LOAN_REPAY})</span>
+              🏦 Take Loan<br/><span style={{fontSize:11,fontWeight:500}}>+₹{LOAN_AMOUNT}, repay ₹{LOAN_REPAY}</span>
             </Btn>
           </div>
-          <button onClick={onClose} style={{width:'100%',marginTop:8,padding:'10px',borderRadius:12,border:'none',cursor:'pointer',background:'#f3f4f6',color:'#9ca3af',fontWeight:700,fontSize:13}}>
+          <button onClick={onClose} style={{width:'100%',marginTop:8,padding:'11px',borderRadius:12,border:'none',cursor:'pointer',background:'#f3f4f6',color:'#9ca3af',fontWeight:700,fontSize:13}}>
             Skip — don't buy
           </button>
         </>);
 
-      // ── LOAN ────────────────────────────────────────────────────────────────
       case 'loan':
-        return(<>
-          <p style={P}>You can borrow ₹{LOAN_AMOUNT} now, but you'll repay ₹{LOAN_REPAY} next lap. Loans always cost more!</p>
+        return (<>
+          <p style={P}>Take ₹{LOAN_AMOUNT} now, but you'll repay ₹{LOAN_REPAY} on your next lap. Loans always cost more than you borrow!</p>
           <Box>
-            <Info l="Borrow now" v={`+₹${LOAN_AMOUNT}`} c="#2563eb"/>
-            <Info l="Repay next lap" v={`₹${LOAN_REPAY}`} c="#dc2626"/>
-            <Info l="Interest cost" v={`₹${LOAN_REPAY-LOAN_AMOUNT}`} c="#dc2626"/>
-            {loanActive&&<div style={{marginTop:6,fontSize:12,color:'#dc2626',fontWeight:700}}>⚠️ You already have an active loan of ₹{loanRemaining}</div>}
+            <Info l="You receive now" v={`+₹${LOAN_AMOUNT}`} c="#2563eb"/>
+            <Info l="You repay next lap" v={`₹${LOAN_REPAY}`} c="#dc2626"/>
+            <Info l="Interest cost" v={`₹${LOAN_REPAY - LOAN_AMOUNT}`} c="#dc2626"/>
+            {loanActive && <div style={{marginTop:7, fontSize:12, color:'#dc2626', fontWeight:700}}>⚠️ Already have loan: ₹{loanRemaining} remaining</div>}
           </Box>
           <Btn onClick={()=>{
-            if(!loanActive){setCoins(coins+LOAN_AMOUNT);setLoanActive(true);setLoanRemaining(LOAN_REPAY);}
+            if(!loanActive){setCoins(coins+LOAN_AMOUNT); setLoanActive(true); setLoanRemaining(LOAN_REPAY);}
             onClose();
           }} disabled={loanActive} color={ac}>
-            {loanActive?'Loan Already Active 🚫':'Take Loan 💳'}
+            {loanActive ? 'Loan Already Active 🚫' : 'Take Loan 💳'}
           </Btn>
         </>);
 
-      // ── FREE / NORMAL ────────────────────────────────────────────────────────
       default:
-        return(<>
-          <p style={P}>Free space — take a breath! No penalties, no costs. Keep rolling!</p>
-          <Box><div style={{textAlign:'center',fontSize:32}}>🌟</div></Box>
+        return (<>
+          <p style={P}>Free space — relax! No costs, no penalties. Take a breath and keep rolling!</p>
+          <Box><div style={{textAlign:'center', fontSize:44, padding:'6px 0'}}>🌟</div></Box>
           <Btn onClick={onClose} color={ac}>Keep Going →</Btn>
         </>);
     }
   };
 
-  return(
-    <div style={{position:'fixed',inset:0,zIndex:999,background:'rgba(0,0,0,0.6)',backdropFilter:'blur(8px)',display:'flex',alignItems:'flex-end',justifyContent:'center',animation:'fi 0.2s ease'}} onClick={onClose}>
-      <div onClick={(e)=>e.stopPropagation()} style={{width:'100%',maxWidth:440,background:'white',borderRadius:'24px 24px 0 0',padding:'0 20px 32px',animation:'su 0.3s cubic-bezier(0.34,1.56,0.64,1)',maxHeight:'82vh',overflowY:'auto'}}>
-        <div style={{width:40,height:4,background:'#e5e7eb',borderRadius:2,margin:'10px auto 16px'}}/>
+  return (
+    <div
+      style={{position:'fixed',inset:0,zIndex:999,background:'rgba(0,0,0,0.65)',backdropFilter:'blur(12px)',display:'flex',alignItems:'flex-end',justifyContent:'center',animation:'fi 0.2s ease'}}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{width:'100%',maxWidth:460,background:'white',borderRadius:'28px 28px 0 0',padding:'0 22px 36px',animation:'su 0.35s cubic-bezier(0.34,1.56,0.64,1)',maxHeight:'85vh',overflowY:'auto'}}
+      >
+        {/* Handle */}
+        <div style={{width:44,height:4,background:'#e5e7eb',borderRadius:2,margin:'12px auto 20px'}}/>
+
         {/* Header */}
-        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:18}}>
-          <div style={{width:50,height:50,borderRadius:16,background:ac,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,boxShadow:`0 6px 20px ${ac}55`,flexShrink:0}}>{tile.icon}</div>
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:20}}>
+          <div style={{width:54,height:54,borderRadius:18,background:ac,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,boxShadow:`0 6px 20px ${ac}55`,flexShrink:0}}>
+            {tile.icon}
+          </div>
           <div>
-            <div style={{fontWeight:900,fontSize:20,color:'#111',fontFamily:'Georgia,serif'}}>{tile.label}</div>
+            <div style={{fontWeight:900,fontSize:22,color:'#111',fontFamily:'Georgia,serif'}}>{tile.label}</div>
             <div style={{fontSize:11,color:'#9ca3af',fontWeight:600}}>
-              Tile #{tile.id+1} · Bankopoly
-              {tile.type==='property'&&isOwned&&' · 🌟 OWNED'}
+              Tile #{tile.id+1} · Bankopoly{tile.type==='property'&&isOwned?' · ★ Owned':''}
             </div>
           </div>
         </div>
-        {/* Rent paid notice */}
-        {rentPaid!==null&&rentPaid>0&&(
-          <div style={{background:'#fee2e2',border:'1.5px solid #fca5a5',borderRadius:10,padding:'10px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:20}}>💸</span>
-            <div><div style={{fontWeight:800,fontSize:14,color:'#dc2626'}}>Rent paid: ₹{rentPaid}</div><div style={{fontSize:11,color:'#6b7280'}}>This property is owned — you owe rent</div></div>
-          </div>
-        )}
+
         {body()}
-        <button onClick={onClose} style={{width:'100%',marginTop:10,padding:13,borderRadius:12,border:'none',cursor:'pointer',background:'#f3f4f6',color:'#9ca3af',fontWeight:700,fontSize:13}}>Continue</button>
+
+        <button onClick={onClose} style={{width:'100%',marginTop:12,padding:14,borderRadius:14,border:'none',cursor:'pointer',background:'#f3f4f6',color:'#9ca3af',fontWeight:700,fontSize:13,letterSpacing:'0.3px'}}>
+          Continue
+        </button>
       </div>
     </div>
   );
 }
 
-// ─── MAIN GAME ───────────────────────────────────────────────────────────────
+// ─── MAIN GAME ────────────────────────────────────────────────────────────────
 export default function BoardGame() {
-  const [coins,setCoins]                = useState(300);           // start with 300
-  const [savings,setSavings]            = useState(0);
-  const [loanActive,setLoanActive]      = useState(false);
-  const [loanRemaining,setLoanRemaining]= useState(0);
-  const [ownedTiles,setOwnedTiles]      = useState<number[]>([]);  // tile IDs owned
-  const [pos,setPos]                    = useState(0);
-  const [diceVal,setDiceVal]            = useState(1);
-  const [rolling,setRolling]            = useState(false);
-  const [modal,setModal]                = useState<Tile|null>(null);
-  const [lapBonus,setLapBonus]          = useState<number|null>(null);  // salary collected this turn
-  const [rentPaid,setRentPaid]          = useState<number|null>(null);  // rent paid this turn
+  const [coins, setCoins]                = useState(300);
+  const [savings, setSavings]            = useState(0);
+  const [loanActive, setLoanActive]      = useState(false);
+  const [loanRemaining, setLoanRemaining]= useState(0);
+  const [ownedTiles, setOwnedTiles]      = useState<number[]>([]);
+  const [pos, setPos]                    = useState(0);
+  const [diceVal, setDiceVal]            = useState(1);
+  const [rolling, setRolling]            = useState(false);
+  const [modal, setModal]                = useState<Tile|null>(null);
+  const [lapBonus, setLapBonus]          = useState<number|null>(null);
+  const [rentEarned, setRentEarned]      = useState<number|null>(null);
+  const [laps, setLaps]                  = useState(0);
+  // rollSeed forces Dice to remount each roll so diceLand always replays
+  const [rollSeed, setRollSeed]          = useState(0);
 
-  const roll=()=>{
-    if(rolling||modal) return;
+  const roll = () => {
+    if (rolling || modal) return;
     setRolling(true);
     setLapBonus(null);
-    setRentPaid(null);
+    setRentEarned(null);
 
-    setTimeout(()=>{
-      const r   = Math.floor(Math.random()*6)+1;
-      setDiceVal(r);
-      const cur = pos;
-      const next= (cur+r)%20;
-      const passedGo = next < cur || (cur===0 && r>0);   // wrapped around or started on GO
+    setTimeout(() => {
+      const r    = Math.floor(Math.random() * 6) + 1;
+      const next = (pos + r) % 20;
+      // Detect crossing GO boundary
+      const crossedGo = (pos + r) >= 20;
 
       let newCoins = coins;
 
-      // ── Passed / landed on GO → collect salary ──────────────────────────
-      if(passedGo || next===0){
+      // ── Salary on passing / landing GO ──────────────────────────────────
+      if (crossedGo) {
         newCoins += GO_SALARY;
         setLapBonus(GO_SALARY);
+        setLaps(l => l + 1);
       }
 
-      // ── Loan repayment on lap completion ────────────────────────────────
-      if(passedGo && loanActive){
+      // ── Loan repayment deducted on lap completion ────────────────────────
+      if (crossedGo && loanActive) {
         const repay = Math.min(newCoins, loanRemaining);
         newCoins   -= repay;
         const rem   = loanRemaining - repay;
         setLoanRemaining(rem);
-        if(rem<=0) setLoanActive(false);
-        else       setLoanRemaining(rem);
+        if (rem <= 0) setLoanActive(false);
       }
 
-      // ── Rent: if landing on a property owned by player → collect rent ───
-      // (In solo play, owning your own property earns rent on re-visit)
+      // ── Rent collected on your own property (solo: you are landlord) ─────
       const landedTile = TILES[next];
-      let rent = 0;
-      if(landedTile.type==='property' && ownedTiles.includes(next)){
-        rent      = landedTile.rent;
-        newCoins += rent;   // solo: you collect your own rent (reward for owning)
-        setRentPaid(rent);
+      if (landedTile.type === 'property' && ownedTiles.includes(next)) {
+        newCoins += landedTile.rent;
+        setRentEarned(landedTile.rent);
       }
 
       setCoins(newCoins);
       setPos(next);
-      setTimeout(()=>{
+      // Set dice value BEFORE clearing rolling so the diceLand animation fires
+      setDiceVal(r);
+      setRollSeed(s => s + 1);
+
+      setTimeout(() => {
         setRolling(false);
         setModal(TILES[next]);
-      },900);
-    },450);
+      }, 900);
+    }, 600);
   };
 
-  const CORN=75, CELL=75, N=5;
-  const BS=CORN*2+CELL*N; // 525px
+  // Board dimensions
+  const CORN = 80;  // corner tile size
+  const CELL = 70;  // regular tile size
+  const N    = 5;   // tiles per side
+  const BS   = CORN * 2 + CELL * N; // = 160 + 350 = 510px
 
-  const propCount  = ownedTiles.length;
-  const propValue  = ownedTiles.reduce((sum,id)=>sum+TILES[id].price,0);
-  const netWorth   = coins + savings + propValue - loanRemaining;
+  const propCount = ownedTiles.length;
+  const propValue = ownedTiles.reduce((s, id) => s + TILES[id].price, 0);
+  const netWorth  = coins + savings + propValue - loanRemaining;
 
   return (
-    <div style={{width:'100vw',height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',background:'#1a2d1f',fontFamily:'system-ui,sans-serif',position:'relative'}}>
+    <div style={{
+      width:'100vw', height:'100vh', overflow:'hidden',
+      display:'flex', flexDirection:'column',
+      background:'#111c14', fontFamily:'system-ui, sans-serif',
+      position:'relative',
+    }}>
       <Town3D />
 
-      {/* ── HUD ─────────────────────────────────────────────────────────── */}
-      <div style={{flexShrink:0,display:'flex',alignItems:'center',padding:'9px 14px',gap:8,background:'#0f1a14',borderBottom:'1px solid rgba(255,255,255,0.1)',position:'relative',zIndex:10,flexWrap:'wrap'}}>
+      {/* ── HUD ──────────────────────────────────────────────────────────── */}
+      <div style={{
+        flexShrink:0, position:'relative', zIndex:10,
+        display:'flex', alignItems:'center', flexWrap:'wrap',
+        padding:'7px 16px', gap:7,
+        background:'rgba(0,0,0,0.55)', backdropFilter:'blur(14px)',
+        borderBottom:'1px solid rgba(255,255,255,0.07)',
+      }}>
         {/* Avatar */}
-        <div style={{width:38,height:38,borderRadius:'50%',flexShrink:0,background:'#2563eb',border:'2.5px solid rgba(255,255,255,0.35)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>🐠</div>
+        <div style={{
+          width:36, height:36, borderRadius:'50%', flexShrink:0,
+          background:'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+          border:'2px solid rgba(255,255,255,0.3)',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:17, boxShadow:'0 2px 10px rgba(59,130,246,0.4)',
+        }}>🐠</div>
 
-        {/* Coins */}
-        <div style={{display:'flex',alignItems:'center',gap:5,background:'rgba(255,255,255,0.09)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:30,padding:'4px 11px'}}>
-          <span style={{fontSize:14}}>💵</span>
-          <span style={{fontWeight:800,fontSize:15,color:'white'}}>₹{coins.toLocaleString()}</span>
-        </div>
-
-        {/* Savings */}
-        {savings>0&&(
-          <div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(22,163,74,0.15)',border:'1px solid rgba(22,163,74,0.25)',borderRadius:30,padding:'4px 10px'}}>
-            <span style={{fontSize:12}}>🏦</span>
-            <span style={{fontWeight:700,fontSize:12,color:'#86efac'}}>₹{savings}</span>
+        {/* Stat pills */}
+        {[
+          {icon:'💵', val:`₹${coins.toLocaleString()}`,       bg:'rgba(251,191,36,0.12)',  bd:'rgba(251,191,36,0.25)',  c:'#fde68a' },
+          {icon:'🏦', val:`₹${savings.toLocaleString()}`,     bg:'rgba(52,211,153,0.12)',  bd:'rgba(52,211,153,0.25)',  c:'#6ee7b7' },
+          {icon:'🏠', val:`${propCount} prop${propCount!==1?'s':''}`, bg:'rgba(251,146,60,0.12)',  bd:'rgba(251,146,60,0.25)',  c:'#fdba74' },
+          {icon:'📊', val:`NW ₹${netWorth.toLocaleString()}`, bg:'rgba(167,139,250,0.12)', bd:'rgba(167,139,250,0.25)', c:'#c4b5fd' },
+        ].map(s => (
+          <div key={s.icon} style={{
+            display:'flex', alignItems:'center', gap:5,
+            background:s.bg, border:`1px solid ${s.bd}`,
+            borderRadius:28, padding:'4px 11px',
+          }}>
+            <span style={{fontSize:12}}>{s.icon}</span>
+            <span style={{fontWeight:800, fontSize:12, color:s.c}}>{s.val}</span>
           </div>
-        )}
+        ))}
 
-        {/* Properties owned */}
-        {propCount>0&&(
-          <div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(234,88,12,0.15)',border:'1px solid rgba(234,88,12,0.3)',borderRadius:30,padding:'4px 10px'}}>
-            <span style={{fontSize:12}}>🏠</span>
-            <span style={{fontWeight:700,fontSize:12,color:'#fdba74'}}>{propCount} {propCount===1?'property':'properties'}</span>
-          </div>
-        )}
-
-        {/* Net worth */}
-        <div style={{display:'flex',alignItems:'center',gap:4,background:'rgba(251,191,36,0.12)',border:'1px solid rgba(251,191,36,0.2)',borderRadius:30,padding:'4px 10px'}}>
-          <span style={{fontSize:11}}>📊</span>
-          <span style={{fontWeight:700,fontSize:11,color:'#fde68a'}}>NW ₹{netWorth.toLocaleString()}</span>
-        </div>
-
-        <div style={{marginLeft:'auto',display:'flex',gap:7,alignItems:'center'}}>
-          {loanActive&&(
-            <div style={{background:'rgba(220,38,38,0.18)',border:'1px solid rgba(220,38,38,0.3)',borderRadius:20,padding:'4px 9px',fontSize:11,fontWeight:700,color:'#fca5a5'}}>⚠️ Loan ₹{loanRemaining}</div>
+        <div style={{marginLeft:'auto', display:'flex', gap:7, alignItems:'center'}}>
+          {loanActive && (
+            <div style={{
+              background:'rgba(220,38,38,0.18)', border:'1px solid rgba(220,38,38,0.3)',
+              borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color:'#fca5a5',
+            }}>⚠️ Loan ₹{loanRemaining}</div>
           )}
-          <div style={{background:'rgba(255,255,255,0.09)',borderRadius:20,padding:'4px 9px',fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.5)'}}>{pos+1}/20</div>
+          <div style={{
+            background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.1)',
+            borderRadius:20, padding:'4px 10px', fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.45)',
+          }}>Round {laps+1} · Tile {pos+1}/20</div>
         </div>
       </div>
 
-      {/* ── MAIN ────────────────────────────────────────────────────────── */}
-      <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'flex-start',gap:24,padding:'0 24px',overflow:'hidden',position:'relative',zIndex:1}}>
+      {/* ── MAIN ─────────────────────────────────────────────────────────── */}
+      <div style={{
+        flex:1, display:'flex', alignItems:'center',
+        justifyContent:'center', gap:32,
+        padding:'0 28px', overflow:'hidden',
+        position:'relative', zIndex:1,
+      }}>
 
-        {/* BOARD */}
-        <div style={{perspective:980,perspectiveOrigin:'50% 42%',flexShrink:0,marginLeft:"30%",marginRight:'auto',marginTop:'-100px'}}>
-          <div style={{width:BS,height:BS,transform:'rotateX(50deg) rotateZ(-42deg)',transformStyle:'preserve-3d',transformOrigin:'center center',filter:'drop-shadow(0 22px 32px rgba(0,0,0,0.75)) drop-shadow(0 6px 10px rgba(0,0,0,0.5))',animation:'float 5s ease-in-out infinite'}}>
-            <div style={{position:'relative',width:BS,height:BS,background:'white',borderRadius:12,outline:'4px solid #8b7355',boxShadow:'0 0 0 8px #b8956a, 0 0 0 12px #1a2d1f, 0 20px 50px rgba(0,0,0,0.8)'}}>
+        {/* BOARD ────────────────────────────────────────────────────────── */}
+        <div style={{
+          perspective:1100, perspectiveOrigin:'50% 38%',
+          flexShrink:0, marginTop:'-28px',
+        }}>
+          <div style={{
+            width:BS, height:BS,
+            transform:'rotateX(46deg) rotateZ(-38deg)',
+            transformStyle:'preserve-3d',
+            transformOrigin:'center center',
+            filter:'drop-shadow(0 26px 40px rgba(0,0,0,0.85)) drop-shadow(0 8px 14px rgba(0,0,0,0.5))',
+            animation:'boardFloat 7s ease-in-out infinite',
+          }}>
+            {/* Board surface */}
+            <div style={{
+              position:'relative', width:BS, height:BS,
+              background:'#f5ede0',
+              borderRadius:14,
+              outline:'5px solid #7c5c32',
+              boxShadow:'0 0 0 11px #a87843, 0 0 0 16px #1a1a0e, 0 0 0 18px rgba(255,255,255,0.04), 0 28px 70px rgba(0,0,0,0.9)',
+            }}>
 
-              {/* felt */}
-              <div style={{position:'absolute',top:CORN,left:CORN,width:BS-CORN*2,height:BS-CORN*2,background:'#22c55e',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'inset 0 2px 8px rgba(0,0,0,0.15)'}}>
-                <div style={{fontFamily:'Georgia,serif',fontWeight:900,fontSize:16,color:'white',textShadow:'2px 3px 12px rgba(0,0,0,0.5)',letterSpacing:2,textAlign:'center',lineHeight:1.2}}>🏦<br/>BANKOPOLY</div>
-                {/* Dice */}
-                <div style={{width:80,height:80,borderRadius:13,background:'#4c1d95',overflow:'hidden',cursor:'pointer',boxShadow:rolling?'0 0 28px rgba(167,139,250,0.85),0 6px 20px rgba(0,0,0,0.5)':'0 6px 20px rgba(0,0,0,0.5)',transition:'box-shadow 0.3s',flexShrink:0}} onClick={roll}>
-                  <Canvas camera={{position:[0,2.5,4.5],fov:32}} shadows>
-                    <color attach="background" args={['#3b0764']}/>
-                    <ambientLight intensity={0.65}/>
-                    <directionalLight position={[4,5,4]} intensity={1.3} castShadow/>
-                    <pointLight position={[-3,2,-2]} intensity={0.3} color="#fbbf24"/>
-                    <DiceMesh rolling={rolling} value={diceVal}/>
-                  </Canvas>
+              {/* ── BOARD CENTER ─────────────────────────────────────────── */}
+              <div style={{
+                position:'absolute', top:CORN, left:CORN,
+                width:BS-CORN*2, height:BS-CORN*2,
+                background:'radial-gradient(ellipse at 38% 32%, #27ae60 0%, #1e8449 45%, #145a32 100%)',
+                display:'flex', flexDirection:'column',
+                alignItems:'center', justifyContent:'center',
+                gap:12, overflow:'hidden',
+                boxShadow:'inset 0 0 40px rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.08)',
+              }}>
+                {/* Decorative inner border */}
+                <div style={{
+                  position:'absolute', inset:10,
+                  border:'1px solid rgba(255,255,255,0.07)',
+                  borderRadius:6, pointerEvents:'none',
+                }}/>
+                {/* Subtle corner accents */}
+                {['TL','TR','BL','BR'].map(c => (
+                  <div key={c} style={{
+                    position:'absolute',
+                    ...(c==='TL'?{top:14,left:14}:c==='TR'?{top:14,right:14}:c==='BL'?{bottom:14,left:14}:{bottom:14,right:14}),
+                    width:10, height:10,
+                    borderTop:    c.startsWith('T')?'2px solid rgba(255,255,255,0.18)':'none',
+                    borderBottom: c.startsWith('B')?'2px solid rgba(255,255,255,0.18)':'none',
+                    borderLeft:   c.endsWith('L')?'2px solid rgba(255,255,255,0.18)':'none',
+                    borderRight:  c.endsWith('R')?'2px solid rgba(255,255,255,0.18)':'none',
+                    pointerEvents:'none',
+                  }}/>
+                ))}
+
+                {/* BANKOPOLY title */}
+                <div style={{
+                  fontFamily:'Georgia, serif', fontWeight:900, fontSize:14,
+                  color:'rgba(255,255,255,0.95)',
+                  textShadow:'0 2px 12px rgba(0,0,0,0.7), 0 0 24px rgba(255,255,255,0.1)',
+                  letterSpacing:4, textAlign:'center', lineHeight:1.35,
+                  background:'rgba(0,0,0,0.25)',
+                  padding:'6px 16px', borderRadius:8,
+                  border:'1px solid rgba(255,255,255,0.12)',
+                }}>🏦<br/>BANKOPOLY</div>
+
+                {/* CSS Dice — no overflow, always correct value */}
+                <div
+                  onClick={rolling || !!modal ? undefined : roll}
+                  style={{
+                    cursor: rolling || !!modal ? 'default' : 'pointer',
+                    filter: rolling
+                      ? 'drop-shadow(0 0 20px rgba(251,191,36,0.9))'
+                      : 'drop-shadow(0 5px 14px rgba(0,0,0,0.55))',
+                    transition:'filter 0.3s',
+                  }}
+                  title={rolling ? 'Rolling…' : 'Click to roll'}
+                >
+                  {/* key = rollSeed forces remount so diceLand always fires */}
+                  <Dice key={`d${rollSeed}`} value={diceVal} rolling={rolling}/>
                 </div>
-                {!rolling&&(
-                  <div style={{width:26,height:26,borderRadius:'50%',background:'#fbbf24',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:13,color:'#1f2937',boxShadow:'0 3px 10px rgba(251,191,36,0.5),0 0 0 3px white'}}>{diceVal}</div>
-                )}
-                {/* Mini property list on board */}
-                {propCount>0&&(
-                  <div style={{fontSize:9,color:'rgba(255,255,255,0.85)',fontWeight:700,textAlign:'center',lineHeight:1.6}}>
-                    {ownedTiles.map(id=><div key={id}>🏠 {TILES[id].label}</div>)}
+
+                {/* Roll status */}
+                <div style={{
+                  fontSize:10, fontWeight:700, letterSpacing:'0.6px',
+                  color:'rgba(255,255,255,0.75)',
+                  textShadow:'0 1px 4px rgba(0,0,0,0.5)',
+                  textTransform:'uppercase',
+                }}>
+                  {rolling ? '🎲 Rolling…' : `Rolled ${diceVal} — tap to roll`}
+                </div>
+
+                {/* Owned properties chips */}
+                {propCount > 0 && (
+                  <div style={{
+                    display:'flex', flexWrap:'wrap', gap:4,
+                    justifyContent:'center', maxWidth:200, padding:'0 10px',
+                  }}>
+                    {ownedTiles.map(id => (
+                      <div key={id} style={{
+                        background:'rgba(255,255,255,0.15)',
+                        border:'1px solid rgba(255,255,255,0.22)',
+                        borderRadius:20, padding:'2px 9px',
+                        fontSize:9, fontWeight:800, color:'white',
+                        display:'flex', alignItems:'center', gap:3,
+                        textTransform:'uppercase', letterSpacing:'0.3px',
+                      }}>🏠 {TILES[id].label}</div>
+                    ))}
                   </div>
                 )}
               </div>
 
+              {/* Tile rows */}
               {/* TOP */}
-              <div style={{position:'absolute',top:0,left:CORN,width:BS-CORN*2,height:CORN,display:'grid',gridTemplateColumns:`repeat(${N},1fr)`,gap:3,padding:3,boxSizing:'border-box'}}>
+              <div style={{position:'absolute',top:0,left:CORN,width:BS-CORN*2,height:CORN,display:'grid',gridTemplateColumns:`repeat(${N},1fr)`,gap:2,padding:2,boxSizing:'border-box'}}>
                 {TOP.map(id=><BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="top"/>)}
               </div>
               {/* BOTTOM */}
-              <div style={{position:'absolute',bottom:0,left:CORN,width:BS-CORN*2,height:CORN,display:'grid',gridTemplateColumns:`repeat(${N},1fr)`,gap:3,padding:3,boxSizing:'border-box'}}>
+              <div style={{position:'absolute',bottom:0,left:CORN,width:BS-CORN*2,height:CORN,display:'grid',gridTemplateColumns:`repeat(${N},1fr)`,gap:2,padding:2,boxSizing:'border-box'}}>
                 {BOT.map(id=><BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="bottom"/>)}
               </div>
               {/* RIGHT */}
-              <div style={{position:'absolute',right:0,top:CORN,width:CORN,height:BS-CORN*2,display:'grid',gridTemplateRows:`repeat(${N},1fr)`,gap:3,padding:3,boxSizing:'border-box'}}>
+              <div style={{position:'absolute',right:0,top:CORN,width:CORN,height:BS-CORN*2,display:'grid',gridTemplateRows:`repeat(${N},1fr)`,gap:2,padding:2,boxSizing:'border-box'}}>
                 {RIGHT.map(id=><BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="right"/>)}
               </div>
               {/* LEFT */}
-              <div style={{position:'absolute',left:0,top:CORN,width:CORN,height:BS-CORN*2,display:'grid',gridTemplateRows:`repeat(${N},1fr)`,gap:3,padding:3,boxSizing:'border-box'}}>
+              <div style={{position:'absolute',left:0,top:CORN,width:CORN,height:BS-CORN*2,display:'grid',gridTemplateRows:`repeat(${N},1fr)`,gap:2,padding:2,boxSizing:'border-box'}}>
                 {LEFT.map(id=><BTile key={id} tile={TILES[id]} active={pos===id} owned={ownedTiles.includes(id)} side="left"/>)}
               </div>
 
               {/* CORNERS */}
-              <div style={{position:'absolute',top:0,left:0,width:CORN,height:CORN,padding:3,boxSizing:'border-box'}}><Corner icon="🎲" top="FREE" bg="#fefce8" border="#a16207"/></div>
-              <div style={{position:'absolute',top:0,right:0,width:CORN,height:CORN,padding:3,boxSizing:'border-box'}}><Corner icon="❓" top="CHANCE" bg="#eff6ff" border="#1d4ed8"/></div>
-              <div style={{position:'absolute',bottom:0,left:0,width:CORN,height:CORN,padding:3,boxSizing:'border-box'}}><Corner icon="🏁" top="COLLECT" bot="← GO" bg="#f0fdf4" border="#15803d"/></div>
-              <div style={{position:'absolute',bottom:0,right:0,width:CORN,height:CORN,padding:3,boxSizing:'border-box'}}><Corner icon="🚔" top="JAIL" bg="#fef2f2" border="#b91c1c"/></div>
+              <div style={{position:'absolute',top:0,left:0,width:CORN,height:CORN,padding:2,boxSizing:'border-box'}}><Corner icon="🎲" top="Free Parking" bg="#fefce8" border="#a16207"/></div>
+              <div style={{position:'absolute',top:0,right:0,width:CORN,height:CORN,padding:2,boxSizing:'border-box'}}><Corner icon="❓" top="Chance" bg="#eff6ff" border="#1d4ed8"/></div>
+              <div style={{position:'absolute',bottom:0,left:0,width:CORN,height:CORN,padding:2,boxSizing:'border-box'}}><Corner icon="🏁" top="Collect" bot="← GO" bg="#f0fdf4" border="#15803d"/></div>
+              <div style={{position:'absolute',bottom:0,right:0,width:CORN,height:CORN,padding:2,boxSizing:'border-box'}}><Corner icon="🚔" top="Jail" bg="#fef2f2" border="#b91c1c"/></div>
             </div>
           </div>
         </div>
 
-        {/* RIGHT PANEL */}
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14,flexShrink:0}}>
-          {/* ROLL BUTTON */}
-          <button onClick={roll} disabled={rolling||!!modal} style={{width:120,height:120,borderRadius:'50%',background:rolling||modal?'#6b7280':'#dc2626',border:'5px solid #fff',boxShadow:rolling||modal?'0 6px 0 #1f2937':'0 10px 0 #7f1d1d,0 4px 0 rgba(0,0,0,0.3),0 14px 36px rgba(220,38,38,0.7)',cursor:rolling||modal?'not-allowed':'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',transform:rolling?'translateY(6px)':'translateY(0)',transition:'all 0.15s cubic-bezier(0.34,1.56,0.64,1)',outline:'none',position:'relative',overflow:'hidden'}}>
-            {!rolling&&<div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 35% 35%, rgba(255,255,255,0.18), transparent 65%)',pointerEvents:'none'}}/>}
-            <span style={{fontSize:34,fontWeight:900,color:'white',textShadow:'0 3px 8px rgba(0,0,0,0.6)',fontFamily:'Georgia,serif',lineHeight:1,position:'relative',zIndex:1}}>{rolling?'🎲':'GO'}</span>
-            {!rolling&&<span style={{fontSize:14,color:'white',fontWeight:800,position:'relative',zIndex:1,marginTop:2}}>ROLL</span>}
+        {/* RIGHT PANEL ──────────────────────────────────────────────────── */}
+        <div style={{
+          display:'flex', flexDirection:'column',
+          alignItems:'center', gap:11, flexShrink:0, width:150,
+        }}>
+          {/* GO ROLL button */}
+          <button
+            onClick={roll}
+            disabled={rolling || !!modal}
+            style={{
+              width:132, height:132, borderRadius:'50%',
+              background: rolling || modal
+                ? 'linear-gradient(135deg, #4b5563, #374151)'
+                : 'linear-gradient(145deg, #f87171, #dc2626)',
+              border:'5px solid white',
+              boxShadow: rolling || modal
+                ? '0 4px 0 #111, 0 8px 20px rgba(0,0,0,0.4)'
+                : '0 10px 0 #7f1d1d, 0 14px 40px rgba(220,38,38,0.55), inset 0 1px 0 rgba(255,255,255,0.25)',
+              cursor: rolling || modal ? 'not-allowed' : 'pointer',
+              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+              transform: rolling ? 'translateY(7px)' : 'translateY(0)',
+              transition:'all 0.14s cubic-bezier(0.34,1.56,0.64,1)',
+              outline:'none', position:'relative', overflow:'hidden',
+            }}
+          >
+            {!rolling && (
+              <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.22), transparent 60%)',pointerEvents:'none'}}/>
+            )}
+            <span style={{
+              fontSize: rolling ? 32 : 40,
+              fontWeight:900, color:'white',
+              textShadow:'0 3px 10px rgba(0,0,0,0.5)',
+              fontFamily:'Georgia, serif', lineHeight:1,
+              position:'relative', zIndex:1,
+            }}>
+              {rolling ? '🎲' : 'GO'}
+            </span>
+            {!rolling && (
+              <span style={{fontSize:13, color:'rgba(255,255,255,0.9)', fontWeight:800, position:'relative', zIndex:1, marginTop:4, letterSpacing:'1px'}}>
+                ROLL
+              </span>
+            )}
           </button>
 
           {/* Stat cards */}
           {[
-            {icon:'💵',label:'WALLET',   val:`₹${coins}`,   color:'#fbbf24'},
-            {icon:'🏦',label:'SAVINGS',  val:`₹${savings}`, color:'#34d399'},
-            {icon:'🏠',label:'PROPERTIES',val:`${propCount} owned`,color:'#fb923c'},
-            {icon:'📊',label:'NET WORTH', val:`₹${netWorth}`,color:'#a78bfa'},
-          ].map(s=>(
-            <div key={s.label} style={{background:'rgba(255,255,255,0.11)',border:'2px solid rgba(255,255,255,0.2)',borderRadius:16,padding:'11px 14px',textAlign:'center',width:'100%',minWidth:122,backdropFilter:'blur(12px)',boxShadow:'0 4px 16px rgba(0,0,0,0.3)'}}>
-              <div style={{fontSize:18}}>{s.icon}</div>
-              <div style={{fontSize:14,fontWeight:900,color:s.color,lineHeight:1.2,marginTop:2}}>{s.val}</div>
-              <div style={{fontSize:9,color:'rgba(255,255,255,0.6)',fontWeight:700,marginTop:3,letterSpacing:'0.5px',textTransform:'uppercase'}}>{s.label}</div>
+            {icon:'💵', label:'WALLET',     val:`₹${coins}`,          color:'#fbbf24'},
+            {icon:'🏦', label:'SAVINGS',    val:`₹${savings}`,        color:'#34d399'},
+            {icon:'🏠', label:'PROPERTIES', val:`${propCount} owned`, color:'#fb923c'},
+            {icon:'📊', label:'NET WORTH',  val:`₹${netWorth}`,       color:'#a78bfa'},
+          ].map(s => (
+            <div key={s.label} style={{
+              background:'rgba(255,255,255,0.07)',
+              border:'1px solid rgba(255,255,255,0.12)',
+              borderRadius:14, padding:'9px 12px',
+              textAlign:'center', width:'100%',
+              backdropFilter:'blur(10px)',
+              boxShadow:'0 2px 12px rgba(0,0,0,0.25)',
+            }}>
+              <div style={{fontSize:16}}>{s.icon}</div>
+              <div style={{fontSize:13, fontWeight:900, color:s.color, lineHeight:1.2, marginTop:2}}>{s.val}</div>
+              <div style={{fontSize:8, color:'rgba(255,255,255,0.45)', fontWeight:700, marginTop:2, letterSpacing:'0.6px', textTransform:'uppercase'}}>{s.label}</div>
             </div>
           ))}
 
           {/* Progress ring */}
-          <div style={{textAlign:'center',position:'relative',width:70,height:70}}>
-            <svg width="70" height="70" style={{transform:'rotate(-90deg)',position:'absolute',top:0,left:0}}>
-              <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5"/>
-              <circle cx="35" cy="35" r="28" fill="none" stroke="#fbbf24" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray={`${2*Math.PI*28}`}
-                strokeDashoffset={`${2*Math.PI*28*(1-(pos+1)/20)}`}
+          <div style={{position:'relative', width:62, height:62}}>
+            <svg width="62" height="62" style={{transform:'rotate(-90deg)', position:'absolute', top:0, left:0}}>
+              <circle cx="31" cy="31" r="24" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="5"/>
+              <circle cx="31" cy="31" r="24" fill="none" stroke="#fbbf24" strokeWidth="5" strokeLinecap="round"
+                strokeDasharray={`${2*Math.PI*24}`}
+                strokeDashoffset={`${2*Math.PI*24*(1 - pos/20)}`}
                 style={{transition:'stroke-dashoffset 0.5s ease'}}/>
             </svg>
             <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
-              <span style={{fontSize:14,fontWeight:900,color:'white',lineHeight:1}}>{pos+1}</span>
-              <span style={{fontSize:8,color:'rgba(255,255,255,0.5)',fontWeight:600,lineHeight:1}}>/20</span>
+              <span style={{fontSize:14, fontWeight:900, color:'white', lineHeight:1}}>{pos}</span>
+              <span style={{fontSize:7, color:'rgba(255,255,255,0.4)', fontWeight:600, lineHeight:1}}>/20</span>
             </div>
           </div>
         </div>
 
         {/* MODAL */}
-        {modal&&(
+        {modal && (
           <Modal
             tile={modal}
             coins={coins}
@@ -579,25 +844,45 @@ export default function BoardGame() {
             loanRemaining={loanRemaining}
             ownedTiles={ownedTiles}
             lapBonus={lapBonus}
-            rentPaid={rentPaid}
+            rentEarned={rentEarned}
             setCoins={setCoins}
             setSavings={setSavings}
             setLoanActive={setLoanActive}
             setLoanRemaining={setLoanRemaining}
             setOwnedTiles={setOwnedTiles}
-            onClose={()=>setModal(null)}
+            onClose={() => setModal(null)}
           />
         )}
       </div>{/* end MAIN */}
 
       <style>{`
-        @keyframes fi       { from{opacity:0} to{opacity:1} }
-        @keyframes su       { from{transform:translateY(100%)} to{transform:translateY(0)} }
-        @keyframes bob      { from{transform:translateY(0)} to{transform:translateY(-6px)} }
-        @keyframes float    { 0%,100%{transform:rotateX(50deg) rotateZ(-42deg) translateZ(0)}
-                              50%    {transform:rotateX(50deg) rotateZ(-42deg) translateZ(8px)} }
-        @keyframes pinPulse { 0%,100%{transform:translateY(0) scale(1)}
-                              50%    {transform:translateY(-4px) scale(1.08)} }
+        @keyframes fi {
+          from { opacity:0 } to { opacity:1 }
+        }
+        @keyframes su {
+          from { transform:translateY(100%) } to { transform:translateY(0) }
+        }
+        @keyframes boardFloat {
+          0%,100% { transform:rotateX(46deg) rotateZ(-38deg) translateZ(0) }
+          50%      { transform:rotateX(46deg) rotateZ(-38deg) translateZ(10px) }
+        }
+        @keyframes pinPulse {
+          0%,100% { transform:translateY(0)   scale(1)    }
+          50%     { transform:translateY(-3px) scale(1.06) }
+        }
+        @keyframes diceRoll {
+          0%   { transform:rotate(0deg)   scale(1.04) }
+          25%  { transform:rotate(90deg)  scale(0.95) }
+          50%  { transform:rotate(180deg) scale(1.04) }
+          75%  { transform:rotate(270deg) scale(0.95) }
+          100% { transform:rotate(360deg) scale(1.04) }
+        }
+        @keyframes diceLand {
+          0%   { transform:scale(0.8) rotate(-10deg) }
+          60%  { transform:scale(1.1) rotate(5deg)   }
+          80%  { transform:scale(0.96) rotate(-2deg) }
+          100% { transform:scale(1)   rotate(0deg)   }
+        }
       `}</style>
     </div>
   );
