@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Town3D } from './Town3D';
+import { useGameStore } from '../Store/useGameStore';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SOUND ENGINE — Web Audio API, no external deps
@@ -922,6 +923,11 @@ function Pill({ icon, val, label, bg, border, color }: { icon: string; val: stri
 // MAIN GAME
 // ═══════════════════════════════════════════════════════════════════════════
 export default function BoardGame() {
+  // ── Zustand store actions ──
+  const claimReward  = useGameStore((s) => s.claimReward);
+  const syncSavings  = useGameStore((s) => s.syncSavings);
+  const resetGameRun = useGameStore((s) => s.resetGameRun);
+
   const [coins, setCoins]               = useState(300);
   const [savings, setSavings]           = useState(0);
   const [loanActive, setLoanActive]     = useState(false);
@@ -952,6 +958,13 @@ export default function BoardGame() {
   const propValue = ownedTiles.reduce((s, id) => s + TILES[id].price, 0);
   const netWorth  = coins + savings + propValue - loanRemaining;
 
+  // ── Sync savings → store every time it changes ──
+  // TownMap and any other screen can read this live via useSavingsMirror()
+  useEffect(() => {
+    syncSavings(savings);
+  }, [savings, syncSavings]);
+
+  // ── Win detection ──
   useEffect(() => {
     if (netWorth >= WIN_THRESHOLD && !showWin) setShowWin(true);
   }, [netWorth, showWin]);
@@ -1298,7 +1311,16 @@ export default function BoardGame() {
         )}
         {showATM   && <ATMModal savings={savings} onWithdraw={(amt) => { setSavings(s => s-amt); setCoins(c => c+amt); }} onClose={() => setShowATM(false)} />}
         {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)} />}
-        {showWin   && <WinModal zenCoins={netWorth} onClaim={() => { window.location.href = '/'; }} />}
+        {showWin   && <WinModal zenCoins={netWorth} onClaim={() => {
+          // ── Persist earned wealth to Zustand store ──
+          // netWorth (coins + savings + property value - loan) becomes the
+          // player's "wealth" currency spendable in TownMap.
+          // savings is also snapshotted so TownMap can show it separately.
+          claimReward(netWorth, savings);
+          // Reset the in-game savings mirror for a potential next run
+          resetGameRun();
+          window.location.href = '/';
+        }} />}
       </div>
 
       <style>{`
