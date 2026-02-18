@@ -1,86 +1,113 @@
-import { Canvas } from '@react-three/fiber';
+/**
+ * TownMap.tsx  — Bankopoly Home Screen
+ *
+ * Layout (top-down):
+ *
+ *   ┌─────────────────────────────────┐
+ *   │        outer town               │  ← HouseBuilding / ShopBuilding / Windmill
+ *   │   ┌───road────────road───┐      │
+ *   │   │  [P1] [P2] [P3]     │      │
+ *   │ road  [P4][BANK][P5]  road      │  ← 3×3 plot grid, bank at centre
+ *   │   │  [P6] [P7] [P8]     │      │
+ *   │   └───road────────road───┘      │
+ *   │        outer town               │
+ *   └─────────────────────────────────┘
+ */
+
 import { Suspense } from 'react';
+import { Canvas } from '@react-three/fiber';
+import {
+  EffectComposer, Bloom, Vignette, ChromaticAberration,
+} from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
+import * as THREE from 'three';
+
+import { GridProvider } from './town/grid/GridManager';
+import GrassTile from './tiles/GrassTile';
+import RoadSystem from './roads/RoadSystem';
+import PlotSystem from './town/plots/PlotSystem';
 import BankBuilding from './BankBuilding';
-import EmptyPlotGrid from './EmptyPlotGrid';
+import DecorationSystem from './decorations/DecorationSystem';
+import AmbientEffects from './effects/AmbientEffects';
+import CameraController from './effects/CameraController';
 import GameHUD from './GameHUD';
 
-function Scene() {
+// ── Post-processing — NO DepthOfField (no blur) ───────────────────────────────
+function PostProcessing() {
   return (
-    <>
-      {/* Professional lighting setup - warm sunlight */}
-      <ambientLight intensity={0.65} color={0xffffff} />
-      
-      {/* Main directional light - warm sunlight from upper right */}
-      <directionalLight 
-        position={[20, 22, 15]} 
-        intensity={1.1}
-        color={0xfffacd}
-        castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
-        shadow-camera-far={80}
-        shadow-camera-left={-35}
-        shadow-camera-right={35}
-        shadow-camera-top={35}
-        shadow-camera-bottom={-35}
-        shadow-bias={-0.0001}
+    <EffectComposer multisampling={4}>
+      <Bloom
+        intensity={1.35}
+        luminanceThreshold={0.55}
+        luminanceSmoothing={0.9}
+        mipmapBlur
+        radius={0.72}
       />
-      
-      {/* Fill light - subtle blue shadow fill */}
-      <directionalLight 
-        position={[-12, 10, -15]} 
-        intensity={0.35}
-        color={0x87CEEB}
+      <Vignette offset={0.28} darkness={0.52} blendFunction={BlendFunction.NORMAL} />
+      <ChromaticAberration
+        offset={[0.0004, 0.0004] as any}
+        blendFunction={BlendFunction.NORMAL}
+        radialModulation={false}
+        modulationOffset={0}
       />
-
-      {/* Warm rim light */}
-      <directionalLight 
-        position={[15, 8, -20]} 
-        intensity={0.25}
-        color={0xffa500}
-      />
-      
-      {/* Sky-blue background */}
-      <color attach="background" args={['#87CEEB']} />
-      
-      {/* Atmospheric fog */}
-      <fog attach="fog" args={['#B0D9FF', 30, 65]} />
-      
-      {/* Large ground plane - natural grass green */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]} receiveShadow>
-        <planeGeometry args={[140, 140]} />
-        <meshStandardMaterial 
-          color="#558B55"
-          roughness={0.95}
-        />
-      </mesh>
-      
-      {/* Bank - central focal point */}
-      <BankBuilding />
-      
-      {/* Town grid with roads, plots, and decorative elements */}
-      <EmptyPlotGrid />
-    </>
+    </EffectComposer>
   );
 }
 
+// ── 3-D scene — everything inside Canvas ─────────────────────────────────────
+function TownScene() {
+  return (
+    <GridProvider>
+      {/* Atmosphere: sky, stars, fog, sparkles, clouds, coins, balloons, birds */}
+      <AmbientEffects />
+
+      {/* Ground */}
+      <GrassTile />
+
+      {/* Roads (4 roads + intersections + crosswalks + sidewalks) */}
+      <RoadSystem />
+
+      {/* 3×3 plot grid (internal paths + 8 empty plots) */}
+      <PlotSystem />
+
+      {/* Bank building at grid centre (0,0) */}
+      <BankBuilding />
+
+      {/* Street lamps, benches, hedges, parking meters,
+          trees, windmills, outer-town buildings */}
+      <DecorationSystem />
+
+      {/* Post-processing FX */}
+      <PostProcessing />
+
+      {/* Isometric 2.5D camera — drag to rotate, scroll to zoom */}
+      <CameraController />
+    </GridProvider>
+  );
+}
+
+// ── Root export ───────────────────────────────────────────────────────────────
 export default function TownMap() {
   return (
-    <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
-      <Canvas 
-        camera={{ 
-          position: [18, 16, 18],  // Perfect isometric 45-degree angle
-          fov: 48,
-          near: 0.1,
-          far: 180
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      <Canvas
+        shadows="soft"
+        dpr={[1, 1.5]}
+        camera={{ position: [20, 22, 20], fov: 44, near: 0.5, far: 220 }}
+        gl={{
+          antialias: true,
+          powerPreference: 'high-performance',
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.15,
+          outputColorSpace: THREE.SRGBColorSpace,
         }}
-        shadows
-        dpr={[1, 2]}
       >
         <Suspense fallback={null}>
-          <Scene />
+          <TownScene />
         </Suspense>
       </Canvas>
+
+      {/* HUD overlay (top bar + bottom hint) — outside Canvas */}
       <GameHUD />
     </div>
   );

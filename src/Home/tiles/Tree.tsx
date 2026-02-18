@@ -1,109 +1,45 @@
-
+import { useRef, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
 
 interface TreeProps {
-  position: [number, number, number];
+  position : [number, number, number];
+  scale?   : number;
 }
 
-export function Tree({ position }: TreeProps) {
+export default function Tree({ position, scale = 1 }: TreeProps) {
+  const topRef = useRef<THREE.Group>(null!);
+  const phase  = useMemo(() => Math.random() * Math.PI * 2, []);
+  const spd    = useMemo(() => 0.55 + Math.random() * 0.5, []);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    topRef.current.rotation.z = Math.sin(t * spd + phase)       * 0.034;
+    topRef.current.rotation.x = Math.sin(t * spd * 0.7 + phase) * 0.014;
+  });
+
   return (
-    <group position={position}>
-      {/* Thick tree trunk with taper */}
-      <mesh position={[0, 0.35, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.22, 0.3, 0.75, 8]} />
-        <meshStandardMaterial 
-          color="#7A6248"
-          roughness={0.75}
-          metalness={0}
-          emissive="#6A5238"
-          emissiveIntensity={0.1}
-        />
+    <group position={position} scale={scale}>
+      {/* Trunk */}
+      <mesh castShadow>
+        <cylinderGeometry args={[0.21, 0.33, 2.1, 8]} />
+        <meshStandardMaterial color="#4e342e" roughness={0.9} />
       </mesh>
-
-      {/* Tree bark texture - vertical groove */}
-      <mesh position={[0.15, 0.45, 0]}>
-        <boxGeometry args={[0.08, 0.6, 0.04]} />
-        <meshStandardMaterial 
-          color="#6A5238"
-          roughness={0.8}
-        />
-      </mesh>
-
-      <mesh position={[-0.15, 0.45, 0]}>
-        <boxGeometry args={[0.08, 0.6, 0.04]} />
-        <meshStandardMaterial 
-          color="#6A5238"
-          roughness={0.8}
-        />
-      </mesh>
-
-      {/* Primary foliage cone - main canopy */}
-      <mesh position={[0, 1.05, 0]} castShadow receiveShadow>
-        <coneGeometry args={[0.72, 1.35, 10]} />
-        <meshStandardMaterial 
-          color="#2D7A2D"
-          roughness={0.82}
-          metalness={0}
-          emissive="#1D6A1D"
-          emissiveIntensity={0.15}
-        />
-      </mesh>
-
-      {/* Secondary foliage - layered effect */}
-      <mesh position={[0, 0.72, 0]} castShadow receiveShadow>
-        <coneGeometry args={[0.58, 0.9, 10]} />
-        <meshStandardMaterial 
-          color="#4CAF50"
-          roughness={0.8}
-          metalness={0}
-          emissive="#2D7A2D"
-          emissiveIntensity={0.12}
-        />
-      </mesh>
-
-      {/* Light foliage highlight - top layer */}
-      <mesh position={[0, 1.35, 0]} castShadow receiveShadow>
-        <coneGeometry args={[0.4, 0.5, 8]} />
-        <meshStandardMaterial 
-          color="#66BB6A"
-          roughness={0.78}
-          metalness={0}
-          emissive="#4CAF50"
-          emissiveIntensity={0.2}
-        />
-      </mesh>
-
-      {/* Sunlit foliage accent - side highlight */}
-      <mesh position={[0.35, 0.95, -0.25]} castShadow>
-        <sphereGeometry args={[0.35, 8, 8]} />
-        <meshStandardMaterial 
-          color="#81C784"
-          roughness={0.75}
-          metalness={0}
-          emissive="#66BB6A"
-          emissiveIntensity={0.25}
-        />
-      </mesh>
-
-      {/* Shadow side foliage - depth */}
-      <mesh position={[-0.28, 0.85, 0.2]} castShadow>
-        <sphereGeometry args={[0.3, 6, 6]} />
-        <meshStandardMaterial 
-          color="#1F5F1F"
-          roughness={0.85}
-          metalness={0}
-          emissive="#0F4F0F"
-          emissiveIntensity={0.1}
-        />
-      </mesh>
-
-      {/* Base foliage transition */}
-      <mesh position={[0, 0.35, 0]} castShadow>
-        <cylinderGeometry args={[0.5, 0.35, 0.4, 10]} />
-        <meshStandardMaterial 
-          color="#3D8F3D"
-          roughness={0.8}
-        />
-      </mesh>
+      {/* Foliage — 3 stacked cones */}
+      <group ref={topRef} position={[0, 2.1, 0]}>
+        <mesh position={[0, 1.4, 0]} castShadow>
+          <coneGeometry args={[1.12, 2.5, 8]} />
+          <meshStandardMaterial color="#1b5e20" roughness={0.8} />
+        </mesh>
+        <mesh position={[0, 0.62, 0]} castShadow>
+          <coneGeometry args={[0.92, 1.9, 8]} />
+          <meshStandardMaterial color="#2e7d32" roughness={0.8} />
+        </mesh>
+        <mesh castShadow>
+          <coneGeometry args={[0.76, 1.55, 8]} />
+          <meshStandardMaterial color="#388e3c" roughness={0.8} />
+        </mesh>
+      </group>
     </group>
   );
 }

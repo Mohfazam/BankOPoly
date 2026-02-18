@@ -1,105 +1,106 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function GameHUD() {
+  const navigate = useNavigate();
+
   return (
     <>
-      {/* Top bar with resources */}
+      {/* ── Top bar ─────────────────────────────────────────── */}
       <div style={{
-        position: 'absolute',
-        top: 15,
-        left: 15,
-        display: 'flex',
-        gap: '12px',
-        zIndex: 100
+        position   : 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+        display    : 'flex', alignItems: 'center', gap: 10,
+        padding    : '10px 18px',
+        background : 'linear-gradient(180deg,#2d5a1b 0%,#1e4012 100%)',
+        borderBottom: '3px solid #a16207',
+        boxShadow  : '0 3px 12px rgba(0,0,0,0.3)',
+        fontFamily : '"Nunito",system-ui,sans-serif',
       }}>
-        {/* Gold counter */}
-        <div style={{
-          background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-          padding: '8px 18px',
-          borderRadius: '25px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-          border: '3px solid white'
-        }}>
-          <span style={{ fontSize: '22px' }}>💰</span>
-          <span style={{ 
-            fontSize: '18px', 
-            fontWeight: 'bold', 
-            color: '#654321',
-            fontFamily: 'Arial, sans-serif'
-          }}>
-            0
-          </span>
+        {/* Logo */}
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginRight:8 }}>
+          <div style={{
+            width:34, height:34, borderRadius:9,
+            background:'#fbbf24', border:'2px solid #d97706',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
+          }}>🏦</div>
+          <div style={{
+            fontFamily:'Georgia,serif', fontWeight:900, fontSize:15,
+            color:'#fbbf24', letterSpacing:2,
+            textShadow:'0 1px 3px rgba(0,0,0,0.5)',
+          }}>BANKOPOLY</div>
         </div>
 
-        {/* XP/Level counter */}
-        <div style={{
-          background: 'linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)',
-          padding: '8px 18px',
-          borderRadius: '25px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-          border: '3px solid white'
-        }}>
-          <span style={{ fontSize: '22px' }}>⭐</span>
-          <span style={{ 
-            fontSize: '18px', 
-            fontWeight: 'bold', 
-            color: 'white',
-            fontFamily: 'Arial, sans-serif'
-          }}>
-            0
-          </span>
+        {/* Status pills */}
+        <div style={{ display:'flex', alignItems:'center', gap:6,
+          background:'rgba(0,0,0,0.35)', border:'2px solid #fb923c',
+          borderRadius:20, padding:'5px 14px' }}>
+          <span style={{ fontSize:15 }}>🗺️</span>
+          <span style={{ fontWeight:900, fontSize:14, color:'#fed7aa' }}>Town Map</span>
         </div>
-      </div>
 
-      {/* Top center title */}
-      <div style={{
-        position: 'absolute',
-        top: 15,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'white',
-        padding: '12px 30px',
-        borderRadius: '30px',
-        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-        border: '3px solid #4A90E2',
-        zIndex: 100,
-        maxWidth: '500px'
-      }}>
-        <div style={{
-          fontSize: '18px',
-          fontWeight: 'bold',
-          color: '#4A90E2',
-          fontFamily: 'Arial, sans-serif',
-          textAlign: 'center',
-          lineHeight: '1.4'
-        }}>
-          Build your dream town by<br/>
-          <span style={{ fontSize: '15px', color: '#666' }}>learning building concepts.</span>
+        <div style={{ display:'flex', alignItems:'center', gap:6,
+          background:'rgba(0,0,0,0.35)', border:'2px solid #4ade80',
+          borderRadius:20, padding:'5px 14px' }}>
+          <span style={{ fontSize:15 }}>🏗️</span>
+          <span style={{ fontWeight:900, fontSize:14, color:'#86efac' }}>8 Plots Available</span>
+        </div>
+
+        {/* CTA button */}
+        <div style={{ marginLeft:'auto' }}>
+          <button
+            onClick={() => navigate('/board')}
+            style={{
+              display    : 'flex', alignItems:'center', gap:6,
+              background : 'linear-gradient(135deg,#16a34a,#15803d)',
+              border     : '2px solid #4ade80',
+              borderRadius: 14, padding: '7px 16px',
+              cursor     : 'pointer', color:'white',
+              fontWeight : 900, fontSize:13,
+              boxShadow  : '0 4px 0 #14532d',
+              fontFamily : '"Nunito",system-ui,sans-serif',
+            }}
+          >🎲 Play Board Game</button>
         </div>
       </div>
 
-      {/* Bottom instructions */}
+      {/* ── Bottom hint ─────────────────────────────────────── */}
       <div style={{
-        position: 'absolute',
-        bottom: 20,
-        left: '50%',
-        transform: 'translateX(-50%)',
-        background: 'rgba(255, 255, 255, 0.95)',
-        padding: '10px 24px',
-        borderRadius: '20px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        color: '#333',
-        fontWeight: '500',
-        zIndex: 100
+        position  : 'fixed', bottom: 24,
+        left: '50%', transform: 'translateX(-50%)',
+        zIndex    : 50,
+        fontFamily: '"Nunito",system-ui,sans-serif',
       }}>
-        🖱️ Click on buildings or empty plots to interact
+        <div style={{
+          background : 'linear-gradient(135deg,#fef9c3,#fef08a)',
+          border     : '3px solid #d97706',
+          borderRadius: 28,
+          padding    : '12px 28px',
+          boxShadow  : '0 8px 28px rgba(0,0,0,0.35),0 0 0 4px rgba(251,191,36,0.2)',
+          display    : 'flex', alignItems:'center', gap:12,
+        }}>
+          <span style={{ fontSize:22 }}>🏦</span>
+          <div>
+            <div style={{ fontWeight:900, fontSize:14, color:'#92400e' }}>
+              Click the Bank to start playing · Hover plots to inspect
+            </div>
+            <div style={{ fontSize:12, color:'#a16207', fontWeight:700, marginTop:1 }}>
+              Drag to rotate · Scroll to zoom
+            </div>
+          </div>
+          <span style={{ fontSize:22 }}>🎲</span>
+        </div>
       </div>
+
+      {/* ── Global CSS ──────────────────────────────────────── */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap');
+        @keyframes plotPop {
+          0%   { transform:scale(0.8) translateY(6px); opacity:0  }
+          65%  { transform:scale(1.07) translateY(-2px); opacity:1 }
+          100% { transform:scale(1) translateY(0);    opacity:1  }
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; }
+      `}</style>
     </>
   );
 }

@@ -1,46 +1,21 @@
-import { useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-
-export interface BaseTileProps {
-  position: [number, number, number];
-  size?: number;
-  onHover?: (hovered: boolean) => void;
-  interactive?: boolean;
+// BaseTile — generic flat tile (reused by various systems)
+interface BaseTileProps {
+  width    : number;
+  length   : number;
+  color    : string;
+  position : [number, number, number];
+  yOffset? : number;
 }
 
-export const BaseTile = ({
-  onHover,
-  interactive = false,
-}: BaseTileProps) => {
-  const groupRef = useRef<THREE.Group>(null);
-  const meshRef = useRef<THREE.Mesh>(null);
-  const [hovered, setHovered] = useState(false);
-
-  useFrame(() => {
-    if (groupRef.current && interactive) {
-      const target = hovered ? 0.15 : 0;
-      groupRef.current.position.y += (target - groupRef.current.position.y) * 0.1;
-    }
-  });
-
-  const handlePointerEnter = (e: any) => {
-    e.stopPropagation();
-    setHovered(true);
-    onHover?.(true);
-  };
-
-  const handlePointerLeave = (e: any) => {
-    e.stopPropagation();
-    setHovered(false);
-    onHover?.(false);
-  };
-
-  return {
-    groupRef,
-    meshRef,
-    hovered,
-    handlePointerEnter,
-    handlePointerLeave,
-  };
-};
+export default function BaseTile({ width, length, color, position, yOffset = 0 }: BaseTileProps) {
+  return (
+    <mesh
+      rotation={[-Math.PI / 2, 0, 0]}
+      position={[position[0], position[1] + yOffset, position[2]]}
+      receiveShadow
+    >
+      <planeGeometry args={[width, length]} />
+      <meshStandardMaterial color={color} roughness={0.88} />
+    </mesh>
+  );
+}
