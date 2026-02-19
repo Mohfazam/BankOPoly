@@ -1,131 +1,281 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// useGameStore.ts
+// useGameStore.ts  —  Bankopoly single source of truth
 //
-// Single source of truth shared between BoardGame ↔ TownMap.
+// Screens that read this store:
+//   BoardGame  — writes everything, reads `wealth`
+//   TownMap    — reads propertyCount, placedProperties, wealth
+//   Dashboard  — reads stats block
 //
-// WHAT LIVES HERE:
-//   • wealth        — ZenCoins carried over from the board game when the
-//                     player wins. This is the currency the TownMap uses
-//                     to unlock / buy buildings. It is ONLY written once:
-//                     when the player hits the Win threshold and clicks
-//                     "Claim". After that BoardGame resets; TownMap reads.
+// PERSISTED (survives hard refresh):
+//   wealth, savings, unlockedBuildings,
+//   propertyCount, placedProperties,
+//   stats (cumulative across all runs)
 //
-//   • savings       — mirrors the live in-game savings balance so TownMap
-//                     (and any future screen) can always read it, even mid-game.
-//
-//   • unlockedBuildings — set of building IDs the player has purchased in
-//                     TownMap. Persisted across page refreshes.
-//
-// WHAT DOES NOT LIVE HERE:
-//   • coins, pos, diceVal, rolling … — pure UI / gameplay state that only
-//     BoardGame needs. Keep those in local useState (no overhead, no confusion).
+// NOT PERSISTED (local BoardGame useState handles these):
+//   coins, pos, diceVal, rolling, loanActive, loanRemaining, ownedTiles …
 // ═══════════════════════════════════════════════════════════════════════════
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// ─── Shape ───────────────────────────────────────────────────────────────────
-interface GameStore {
-  // ── Cross-screen values ──────────────────────────────────────────────────
-  /**
-   * wealth: the final ZenCoin balance carried from BoardGame → TownMap.
-   * Written exactly once per run (on game win). TownMap spends from this.
-   */
-  wealth: number;
+// ─── Sub-types ────────────────────────────────────────────────────────────────
 
-  /**
-   * savings: live mirror of the player's in-game savings balance.
-   * BoardGame keeps it in sync on every change so TownMap can read it
-   * even while a game is in progress (e.g. for a "current savings" widget).
-   */
-  savings: number;
+export type PropertyType =
+  | 'house'
+  | 'shop'
+  | 'bank'
+  | 'hospital'
+  | 'windmill'
+  | 'park';
 
-  /**
-   * unlockedBuildings: IDs of buildings the player has bought in TownMap.
-   * Persisted — survives page refresh.
-   */
-  unlockedBuildings: string[];
-
-  // ── Actions ──────────────────────────────────────────────────────────────
-
-  /**
-   * Called by BoardGame the moment the player wins (clicks "Claim").
-   * Adds `finalNetWorth` to any existing wealth so multiple runs stack up.
-   * Also snapshots the final savings balance.
-   */
-  claimReward: (finalNetWorth: number, finalSavings: number) => void;
-
-  /**
-   * Called by BoardGame on every savings change (deposit, withdrawal,
-   * interest, etc.) so the store mirror stays in sync.
-   */
-  syncSavings: (amount: number) => void;
-
-  /**
-   * Called by TownMap when the player buys a building.
-   * Deducts `cost` from `wealth`. No-ops if already owned or can't afford.
-   */
-  unlockBuilding: (id: string, cost: number) => void;
-
-  /**
-   * Resets the in-progress game state (savings mirror) without touching
-   * wealth or unlockedBuildings — useful when starting a new game run
-   * after already having visited the TownMap.
-   */
-  resetGameRun: () => void;
+export interface PlacedProperty {
+  plotId:  string;
+  type:    PropertyType;
+  builtAt: string;
 }
 
-// ─── Store ───────────────────────────────────────────────────────────────────
+/**
+ * One loan event — pushed when taken, updated in-place when repaid.
+ * Dashboard derives counts, totals, and history from this array.
+ */
+export interface LoanRecord {
+  id:             string;
+  borrowedAmount: number;
+  totalOwed:      number;
+  repaidAmount:   number;
+  fullyRepaid:    boolean;
+  takenAt:        string;
+}
+
+// ─── Stats block ──────────────────────────────────────────────────────────────
+export interface GameStats {
+  /** Cumulative ZenCoins deposited to savings across all runs. */
+  totalAmountSaved:    number;
+
+  /** Cumulative interest coins received from EARN tiles. */
+  totalInterestEarned: number;
+
+  /** Full loan history — dashboard derives counts/totals from this. */
+  loansHistory:        LoanRecord[];
+
+  /** Total SCAM tiles landed on. */
+  scamsEncountered:    number;
+
+  /** How many scams the player successfully avoided (Ignore button). */
+  scamsAvoided:        number;
+}
+
+// ─── Full store shape ─────────────────────────────────────────────────────────
+interface GameStore {
+  // ── Cross-screen ─────────────────────────────────────────────────────────
+  wealth:            number;
+  savings:           number;
+  unlockedBuildings: string[];
+
+  // ── Property deed system ──────────────────────────────────────────────────
+  propertyCount:    number;
+  placedProperties: Record<string, PlacedProperty>;
+
+  // ── Dashboard stats (cumulative, never reset) ─────────────────────────────
+  stats: GameStats;
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+
+  // Board-game lifecycle
+  claimReward:  (finalNetWorth: number, finalSavings: number) => void;
+  syncSavings:  (amount: number) => void;
+  resetGameRun: () => void;
+
+  // Property deed system
+  earnProperty:   () => void;
+  placeProperty:  (plotId: string, type: PropertyType) => void;
+  removeProperty: (plotId: string) => void;
+
+  // Plot unlocks (wealth-gated)
+  unlockBuilding: (id: string, cost: number) => void;
+
+  // ── Dashboard stat recorders ──────────────────────────────────────────────
+
+  /** Player deposited `amount` coins into savings. */
+  recordSave: (amount: number) => void;
+
+  /** Player collected `amount` interest from an EARN tile. */
+  recordInterest: (amount: number) => void;
+
+  /**
+   * Player took a loan.
+   * Returns the new loan id (useful if caller needs to reference it later).
+   */
+  recordLoanTaken: (borrowedAmount: number, totalOwed: number) => string;
+
+  /**
+   * `amount` coins were used at GO to repay the oldest active loan.
+   * Updates repaidAmount + fullyRepaid flag on that record.
+   */
+  recordLoanRepaid: (amount: number) => void;
+
+  /**
+   * Player landed on a SCAM tile and made a choice.
+   * avoided = true  → "Ignore & Report" path
+   * avoided = false → "Give OTP" path
+   */
+  recordScamEncounter: (avoided: boolean) => void;
+}
+
+// ─── Store ────────────────────────────────────────────────────────────────────
 export const useGameStore = create<GameStore>()(
   persist(
     (set, get) => ({
-      // ── Initial state ───────────────────────────────────────────────────
-      wealth: 0,
-      savings: 0,
+      // ── Initial state ─────────────────────────────────────────────────────
+      wealth:            0,
+      savings:           0,
       unlockedBuildings: [],
+      propertyCount:     0,
+      placedProperties:  {},
+      stats: {
+        totalAmountSaved:    0,
+        totalInterestEarned: 0,
+        loansHistory:        [],
+        scamsEncountered:    0,
+        scamsAvoided:        0,
+      },
 
-      // ── claimReward ─────────────────────────────────────────────────────
-      // Called once when player wins. Stacks wealth across runs.
+      // ── Board-game lifecycle ──────────────────────────────────────────────
       claimReward: (finalNetWorth, finalSavings) =>
-        set((state) => ({
-          wealth: state.wealth + finalNetWorth,
-          savings: finalSavings,
-        })),
+        set((s) => ({ wealth: s.wealth + finalNetWorth, savings: finalSavings })),
 
-      // ── syncSavings ──────────────────────────────────────────────────────
-      // Keep the store mirror in sync with every BoardGame savings change.
       syncSavings: (amount) => set({ savings: amount }),
 
-      // ── unlockBuilding ───────────────────────────────────────────────────
-      unlockBuilding: (id, cost) => {
-        const { wealth, unlockedBuildings } = get();
-        if (unlockedBuildings.includes(id)) return;  // already owned
-        if (wealth < cost) return;                   // can't afford
-        set((state) => ({
-          wealth: state.wealth - cost,
-          unlockedBuildings: [...state.unlockedBuildings, id],
+      resetGameRun: () => set({ savings: 0 }),
+
+      // ── Property deed system ──────────────────────────────────────────────
+      earnProperty: () =>
+        set((s) => ({ propertyCount: s.propertyCount + 1 })),
+
+      placeProperty: (plotId, type) => {
+        const { propertyCount, placedProperties } = get();
+        if (propertyCount <= 0)       return;
+        if (placedProperties[plotId]) return;
+        set((s) => ({
+          propertyCount: s.propertyCount - 1,
+          placedProperties: {
+            ...s.placedProperties,
+            [plotId]: { plotId, type, builtAt: new Date().toISOString() },
+          },
         }));
       },
 
-      // ── resetGameRun ─────────────────────────────────────────────────────
-      // Start a fresh board-game run without wiping TownMap progress.
-      resetGameRun: () => set({ savings: 0 }),
+      removeProperty: (plotId) => {
+        const { placedProperties } = get();
+        if (!placedProperties[plotId]) return;
+        const next = { ...placedProperties };
+        delete next[plotId];
+        set((s) => ({ propertyCount: s.propertyCount + 1, placedProperties: next }));
+      },
+
+      // ── Plot unlocks ──────────────────────────────────────────────────────
+      unlockBuilding: (id, cost) => {
+        const { wealth, unlockedBuildings } = get();
+        if (unlockedBuildings.includes(id)) return;
+        if (wealth < cost)                  return;
+        set((s) => ({
+          wealth:            s.wealth - cost,
+          unlockedBuildings: [...s.unlockedBuildings, id],
+        }));
+      },
+
+      // ── Stat recorders ────────────────────────────────────────────────────
+      recordSave: (amount) =>
+        set((s) => ({
+          stats: { ...s.stats, totalAmountSaved: s.stats.totalAmountSaved + amount },
+        })),
+
+      recordInterest: (amount) =>
+        set((s) => ({
+          stats: { ...s.stats, totalInterestEarned: s.stats.totalInterestEarned + amount },
+        })),
+
+      recordLoanTaken: (borrowedAmount, totalOwed) => {
+        const id =
+          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : Date.now().toString();
+        const record: LoanRecord = {
+          id,
+          borrowedAmount,
+          totalOwed,
+          repaidAmount: 0,
+          fullyRepaid:  false,
+          takenAt:      new Date().toISOString(),
+        };
+        set((s) => ({
+          stats: { ...s.stats, loansHistory: [...s.stats.loansHistory, record] },
+        }));
+        return id;
+      },
+
+      recordLoanRepaid: (amount) =>
+        set((s) => {
+          // Patch only the first un-fully-repaid loan
+          let patched = false;
+          const loansHistory = s.stats.loansHistory.map((loan) => {
+            if (patched || loan.fullyRepaid) return loan;
+            patched = true;
+            const newRepaid = loan.repaidAmount + amount;
+            return { ...loan, repaidAmount: newRepaid, fullyRepaid: newRepaid >= loan.totalOwed };
+          });
+          return { stats: { ...s.stats, loansHistory } };
+        }),
+
+      recordScamEncounter: (avoided) =>
+        set((s) => ({
+          stats: {
+            ...s.stats,
+            scamsEncountered: s.stats.scamsEncountered + 1,
+            scamsAvoided: avoided ? s.stats.scamsAvoided + 1 : s.stats.scamsAvoided,
+          },
+        })),
     }),
     {
-      name: 'bankopoly-store',   // localStorage key
-      // Only persist what needs to survive a hard refresh.
-      // In-game transient state (coins, pos, etc.) lives in BoardGame useState.
-      partialize: (state) => ({
-        wealth:             state.wealth,
-        savings:            state.savings,
-        unlockedBuildings:  state.unlockedBuildings,
+      name: 'bankopoly-store',
+      partialize: (s) => ({
+        wealth:            s.wealth,
+        savings:           s.savings,
+        unlockedBuildings: s.unlockedBuildings,
+        propertyCount:     s.propertyCount,
+        placedProperties:  s.placedProperties,
+        stats:             s.stats,
       }),
     }
   )
 );
 
-// ─── Convenience selectors (use these in components for clean reads) ──────────
-// e.g.  const wealth = useWealth();
+// ─── Convenience selectors ────────────────────────────────────────────────────
 export const useWealth            = () => useGameStore((s) => s.wealth);
 export const useSavingsMirror     = () => useGameStore((s) => s.savings);
 export const useUnlockedBuildings = () => useGameStore((s) => s.unlockedBuildings);
+export const usePropertyCount     = () => useGameStore((s) => s.propertyCount);
+export const usePlacedProperties  = () => useGameStore((s) => s.placedProperties);
+export const useGameStats         = () => useGameStore((s) => s.stats);
+
+// ─── Pure dashboard helper (no Zustand, use anywhere) ────────────────────────
+export function deriveDashboardData(stats: GameStats) {
+  const totalLoansTaken  = stats.loansHistory.length;
+  const totalBorrowed    = stats.loansHistory.reduce((a, l) => a + l.borrowedAmount, 0);
+  const totalRepaid      = stats.loansHistory.reduce((a, l) => a + l.repaidAmount, 0);
+  const activeLoans      = stats.loansHistory.filter((l) => !l.fullyRepaid).length;
+  const scamAvoidRate    = stats.scamsEncountered > 0
+    ? Math.round((stats.scamsAvoided / stats.scamsEncountered) * 100)
+    : 0;
+
+  return {
+    // raw
+    ...stats,
+    // derived
+    totalLoansTaken,
+    totalBorrowed,
+    totalRepaid,
+    activeLoans,
+    scamAvoidRate,
+  };
+}

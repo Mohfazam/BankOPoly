@@ -382,7 +382,6 @@ function ATMModal({ savings, onWithdraw, onClose }: { savings: number; onWithdra
 function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: () => void }) {
   const [phase, setPhase] = useState<'flash' | 'reveal' | 'bonus' | 'done'>('flash');
   const [bonusVisible, setBonusVisible] = useState(false);
-  // Reduced confetti count (28 vs 48) and pre-computed to avoid rerender cost
   const [confetti] = useState(() =>
     Array.from({ length: 28 }, (_, i) => ({
       id: i,
@@ -409,7 +408,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       overflow: 'hidden',
     }}>
-      {/* Dark backdrop */}
       <div style={{
         position: 'absolute', inset: 0,
         background: phase === 'flash'
@@ -419,7 +417,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
         willChange: 'background',
       }} />
 
-      {/* Confetti — GPU-composited via will-change:transform */}
       {phase !== 'flash' && confetti.map(c => (
         <div key={c.id} style={{
           position: 'absolute',
@@ -441,7 +438,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
         </div>
       ))}
 
-      {/* ── MAIN CARD ── */}
       <div style={{
         position: 'relative', zIndex: 10,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -449,8 +445,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
         opacity: phase === 'flash' ? 0 : 1,
         willChange: 'transform, opacity',
       }}>
-
-        {/* Glow rings — only 2 for perf */}
         {[1, 2].map(r => (
           <div key={r} style={{
             position: 'absolute',
@@ -464,7 +458,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
           }} />
         ))}
 
-        {/* Stamp */}
         <div style={{
           background: 'rgba(255,255,255,0.08)',
           border: '2px solid rgba(251,191,36,0.4)',
@@ -482,7 +475,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
           🏆 Goal Reached!
         </div>
 
-        {/* Land card */}
         <div style={{
           width: 290,
           background: 'linear-gradient(160deg, #1e3a5f 0%, #0f2040 100%)',
@@ -493,7 +485,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
           marginBottom: 16,
           willChange: 'transform',
         }}>
-          {/* Top strip */}
           <div style={{
             background: 'linear-gradient(135deg, #d97706, #fbbf24, #d97706)',
             padding: '3px 0',
@@ -508,7 +499,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
           </div>
 
           <div style={{ padding: '20px 22px 18px', textAlign: 'center' }}>
-            {/* Land plot emoji instead of house */}
             <div style={{
               fontSize: 72,
               lineHeight: 1,
@@ -550,7 +540,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
               marginBottom: 14,
             }} />
 
-            {/* Stats */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
@@ -569,7 +558,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
           </div>
         </div>
 
-        {/* Bonus pop */}
         {bonusVisible && (
           <div style={{
             background: 'linear-gradient(135deg, #16a34a, #15803d)',
@@ -593,7 +581,6 @@ function HouseUnlockOverlay({ netWorth, onDone }: { netWorth: number; onDone: ()
           </div>
         )}
 
-        {/* Continue — only in done phase */}
         {phase === 'done' && (
           <button
             onClick={onDone}
@@ -628,7 +615,6 @@ function WinModal({ zenCoins, savings, scamsAvoided, interestEarned, onClaim }: 
     <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15,23,42,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ maxWidth: 360, width: '100%', animation: 'slideInBounce 0.5s cubic-bezier(0.34,1.56,0.64,1)' }}>
 
-        {/* Compact win card */}
         <div style={{ background: 'linear-gradient(135deg, #fef9c3 0%, #fef08a 100%)', borderRadius: 22, border: '3px solid #d97706', padding: '18px 20px 14px', textAlign: 'center', marginBottom: 8, boxShadow: '0 12px 40px rgba(0,0,0,0.35)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 8 }}>
             <span style={{ fontSize: 36, animation: 'pinBounce 1.5s ease-in-out infinite' }}>🏆</span>
@@ -638,7 +624,6 @@ function WinModal({ zenCoins, savings, scamsAvoided, interestEarned, onClaim }: 
             </div>
           </div>
 
-          {/* Inline land unlock + bonus badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.07)', border: '2px solid #d97706', borderRadius: 14, padding: '8px 14px', marginBottom: 10 }}>
             <span style={{ fontSize: 22 }}>🏡</span>
             <div style={{ textAlign: 'left', flex: 1 }}>
@@ -648,7 +633,6 @@ function WinModal({ zenCoins, savings, scamsAvoided, interestEarned, onClaim }: 
             <div style={{ background: '#16a34a', borderRadius: 10, padding: '4px 9px', fontSize: 12, fontWeight: 900, color: 'white', whiteSpace: 'nowrap' }}>+₹{HOUSE_BONUS}</div>
           </div>
 
-          {/* Compact recap row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
             {[
               { icon: '💰', label: 'Saved', val: `₹${savings}` },
@@ -773,9 +757,13 @@ interface ModalProps {
   onScamAvoided: () => void;
   onInterestEarned: (n: number) => void;
   onClose: () => void;
+  // ── NEW store callbacks (additive — nothing existing removed) ──
+  onSaved: (amount: number) => void;
+  onScamFailed: () => void;
+  onLoanTaken: () => void;
 }
 
-function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, lapBonus, rentEarned, streak, setCoins, setSavings, setLoanActive, setLoanRemaining, setOwnedTiles, onWalletShake, onScamAvoided, onInterestEarned, onClose }: ModalProps) {
+function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, lapBonus, rentEarned, streak, setCoins, setSavings, setLoanActive, setLoanRemaining, setOwnedTiles, onWalletShake, onScamAvoided, onInterestEarned, onClose, onSaved, onScamFailed, onLoanTaken }: ModalProps) {
   const c = COLORS[tile.type];
   const isOwned = ownedTiles.includes(tile.id);
 
@@ -852,7 +840,15 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
             {customSaveInvalid && <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 800, marginBottom: 8 }}>⚠️ Enter a number bigger than 0!</div>}
             {!customSaveInvalid && customSaveStr !== '' && parseInt(customSaveStr,10) > coins && <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 800, marginBottom: 8 }}>⚠️ You only have ₹{coins} in your wallet!</div>}
             <div style={{ marginBottom: 14 }} />
-            <Btn onClick={() => { const amt = effectiveSave; if (amt > 0 && coins >= amt) { setCoins(coins - amt); setSavings(savings + amt); } onClose(); }} disabled={effectiveSave <= 0 || coins < effectiveSave || customSaveInvalid} bg="#2563eb" shadow="#1e40af">
+            <Btn onClick={() => {
+              const amt = effectiveSave;
+              if (amt > 0 && coins >= amt) {
+                setCoins(coins - amt);
+                setSavings(savings + amt);
+                onSaved(amt); // ← NEW: record in store
+              }
+              onClose();
+            }} disabled={effectiveSave <= 0 || coins < effectiveSave || customSaveInvalid} bg="#2563eb" shadow="#1e40af">
               {coins >= effectiveSave && effectiveSave > 0 ? `Save ₹${effectiveSave}! 🏦` : effectiveSave > coins ? `Not enough coins! 😅` : `Pick an amount first`}
             </Btn>
           </>
@@ -871,7 +867,13 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
               </div>
             </Box>
             {bonus === 0 && <p style={{ ...pStyle, color: '#dc2626', fontSize: 13, margin: '0 0 12px', fontWeight: 700 }}>💡 Save some coins first to earn interest!</p>}
-            <Btn onClick={() => { if (bonus > 0) { setSavings(savings + bonus); onInterestEarned(bonus); } onClose(); }} bg="#0d9488" shadow="#0f766e" disabled={bonus === 0}>
+            <Btn onClick={() => {
+              if (bonus > 0) {
+                setSavings(savings + bonus);
+                onInterestEarned(bonus); // existing — also calls recordInterest via parent
+              }
+              onClose();
+            }} bg="#0d9488" shadow="#0f766e" disabled={bonus === 0}>
               {bonus > 0 ? `Collect ₹${bonus} interest! 💰` : 'Save first, then earn!'}
             </Btn>
           </>
@@ -892,8 +894,16 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
               🛡️ Real banks NEVER ask for your OTP, PIN, or password!
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <Btn onClick={() => { setCoins(Math.max(0, coins-100)); onClose(); }} bg="#dc2626" shadow="#b91c1c">Give OTP<br /><span style={{ fontSize: 12 }}>LOSE ₹100 😱</span></Btn>
-              <Btn onClick={() => { setCoins(coins+50); onScamAvoided(); onClose(); }} bg="#16a34a" shadow="#15803d">Ignore It!<br /><span style={{ fontSize: 12 }}>WIN ₹50 🎉</span></Btn>
+              <Btn onClick={() => {
+                setCoins(Math.max(0, coins-100));
+                onScamFailed(); // ← NEW: record failed encounter in store
+                onClose();
+              }} bg="#dc2626" shadow="#b91c1c">Give OTP<br /><span style={{ fontSize: 12 }}>LOSE ₹100 😱</span></Btn>
+              <Btn onClick={() => {
+                setCoins(coins+50);
+                onScamAvoided(); // existing — also calls recordScamEncounter(true) via parent
+                onClose();
+              }} bg="#16a34a" shadow="#15803d">Ignore It!<br /><span style={{ fontSize: 12 }}>WIN ₹50 🎉</span></Btn>
             </div>
           </>
         );
@@ -912,7 +922,7 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
             {coins >= 100 && (
               <div style={{ display: 'flex', gap: 10 }}>
                 <Btn onClick={() => { setCoins(coins-100); onClose(); }} bg="#ea580c" shadow="#c2410c">🚲 New Bike<br /><span style={{ fontSize: 11 }}>₹100 (Want)</span></Btn>
-                <Btn onClick={() => { setSavings(savings+50); onClose(); }} bg="#9333ea" shadow="#7e22ce">📚 Save for School<br /><span style={{ fontSize: 11 }}>+₹50 Saved!</span></Btn>
+                <Btn onClick={() => { setSavings(savings+50); onSaved(50); onClose(); }} bg="#9333ea" shadow="#7e22ce">📚 Save for School<br /><span style={{ fontSize: 11 }}>+₹50 Saved!</span></Btn>
               </div>
             )}
             {coins < 100 && (
@@ -926,7 +936,7 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
                     🏦 Withdraw from savings &amp; Buy Bike
                   </button>
                 )}
-                <Btn onClick={() => { setSavings(savings+50); onClose(); }} bg="#9333ea" shadow="#7e22ce">📚 Smart move — Save for School!<br /><span style={{ fontSize: 11 }}>+₹50 into savings</span></Btn>
+                <Btn onClick={() => { setSavings(savings+50); onSaved(50); onClose(); }} bg="#9333ea" shadow="#7e22ce">📚 Smart move — Save for School!<br /><span style={{ fontSize: 11 }}>+₹50 into savings</span></Btn>
               </>
             )}
           </>
@@ -970,7 +980,13 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
                   </button>
                 )}
                 {!loanActive && (
-                  <button onClick={() => { setCoins(coins + LOAN_AMOUNT); setLoanActive(true); setLoanRemaining(LOAN_REPAY); onClose(); }}
+                  <button onClick={() => {
+                    setCoins(coins + LOAN_AMOUNT);
+                    setLoanActive(true);
+                    setLoanRemaining(LOAN_REPAY);
+                    onLoanTaken(); // ← NEW: record in store
+                    onClose();
+                  }}
                     style={{ width: '100%', padding: '11px', borderRadius: 12, border: 'none', cursor: 'pointer', background: '#d946ef', color: 'white', fontWeight: 900, fontSize: 14, fontFamily: '"Nunito", system-ui', boxShadow: '0 4px 0 #86198f', marginBottom: 10 }}>
                     📋 Take Loan of ₹{LOAN_AMOUNT} (repay ₹{LOAN_REPAY} later)
                   </button>
@@ -1005,7 +1021,13 @@ function Modal({ tile, coins, savings, loanActive, loanRemaining, ownedTiles, la
             <Box><Info l="👛 Your wallet now" v={`₹${coins}`} />{loanActive && <Info l="⚠️ Current loan owed" v={`₹${loanRemaining}`} color="#dc2626" />}</Box>
             {loanActive
               ? <div style={{ background: '#fee2e2', border: '2px solid #fca5a5', borderRadius: 12, padding: '12px 14px', textAlign: 'center', fontSize: 13, color: '#b91c1c', fontWeight: 800 }}>⛔ You already have a loan of ₹{loanRemaining} to repay!</div>
-              : <Btn onClick={() => { setCoins(coins+LOAN_AMOUNT); setLoanActive(true); setLoanRemaining(LOAN_REPAY); onClose(); }} disabled={false} bg="#d946ef" shadow="#86198f">📋 Borrow ₹{LOAN_AMOUNT} (repay ₹{LOAN_REPAY} at GO)</Btn>
+              : <Btn onClick={() => {
+                  setCoins(coins+LOAN_AMOUNT);
+                  setLoanActive(true);
+                  setLoanRemaining(LOAN_REPAY);
+                  onLoanTaken(); // ← NEW: record in store
+                  onClose();
+                }} disabled={false} bg="#d946ef" shadow="#86198f">📋 Borrow ₹{LOAN_AMOUNT} (repay ₹{LOAN_REPAY} at GO)</Btn>
             }
           </>
         );
@@ -1047,6 +1069,13 @@ export default function BoardGame() {
   const syncSavings  = useGameStore((s) => s.syncSavings);
   const resetGameRun = useGameStore((s) => s.resetGameRun);
   const wealth       = useGameStore((s) => s.wealth);
+  // ── NEW store actions ──
+  const earnProperty        = useGameStore((s) => s.earnProperty);
+  const recordSave          = useGameStore((s) => s.recordSave);
+  const recordInterest      = useGameStore((s) => s.recordInterest);
+  const recordLoanTaken     = useGameStore((s) => s.recordLoanTaken);
+  const recordLoanRepaid    = useGameStore((s) => s.recordLoanRepaid);
+  const recordScamEncounter = useGameStore((s) => s.recordScamEncounter);
 
   const [coins, setCoins]               = useState(300);
   const [savings, setSavings]           = useState(0);
@@ -1065,7 +1094,7 @@ export default function BoardGame() {
   const [showATM, setShowATM]           = useState(false);
   const [showHowTo, setShowHowTo]       = useState(false);
   const [showWin, setShowWin]           = useState(false);
-  const [showUnlock, setShowUnlock]     = useState(false);  // ← NEW house unlock overlay
+  const [showUnlock, setShowUnlock]     = useState(false);
   const [scamsAvoided, setScamsAvoided] = useState(0);
   const [interestEarned, setInterestEarned] = useState(0);
   const [floats, setFloats]             = useState<FloatingText[]>([]);
@@ -1077,12 +1106,22 @@ export default function BoardGame() {
   const [turnLog, setTurnLog]           = useState<TurnEntry[]>([]);
   const turnId                          = useRef(0);
   const play                            = useSound();
+  // ── NEW: prevent earnProperty firing more than once ──
+  const winTriggered                    = useRef(false);
 
   const propValue = ownedTiles.reduce((s, id) => s + TILES[id].price, 0);
   const netWorth  = coins + savings + propValue - loanRemaining;
 
   useEffect(() => { syncSavings(savings); }, [savings, syncSavings]);
-  useEffect(() => { if (netWorth >= WIN_THRESHOLD && !showWin) setShowWin(true); }, [netWorth, showWin]);
+
+  // ── UPDATED: now also calls earnProperty() once on win ──
+  useEffect(() => {
+    if (netWorth >= WIN_THRESHOLD && !showWin && !winTriggered.current) {
+      winTriggered.current = true;
+      setShowWin(true);
+      earnProperty();
+    }
+  }, [netWorth, showWin, earnProperty]);
 
   const spawnFloat = (text: string, color: string) => {
     const id = floatId.current++;
@@ -1144,6 +1183,7 @@ export default function BoardGame() {
       changes.push(`-₹${repay} loan repaid`);
       const rem = loanRemaining - repay;
       setLoanRemaining(rem);
+      recordLoanRepaid(repay); // ← NEW: record repayment in store
       if (rem <= 0) { setLoanActive(false); spawnFloat('Loan Paid! 🎉', '#9333ea'); }
     }
 
@@ -1180,9 +1220,7 @@ export default function BoardGame() {
     setTimeout(() => { setRolling(false); setModal(TILES[next]); }, 900);
   };
 
-  // ── House Unlock claim handler ──
   const handleWinClaim = () => {
-    // Credit the +₹500 house bonus to wallet for the overlay display
     setCoins(c => c + HOUSE_BONUS);
     spawnFloat(`+₹${HOUSE_BONUS} House Bonus!`, '#16a34a');
     play('unlock');
@@ -1190,7 +1228,6 @@ export default function BoardGame() {
     setShowUnlock(true);
   };
 
-  // ── After unlock animation completes → persist & redirect ──
   const handleUnlockDone = () => {
     const finalNetWorth = netWorth + HOUSE_BONUS;
     claimReward(finalNetWorth, savings);
@@ -1363,19 +1400,22 @@ export default function BoardGame() {
           <Modal tile={modal} coins={coins} savings={savings} loanActive={loanActive} loanRemaining={loanRemaining} ownedTiles={ownedTiles} lapBonus={lapBonus} rentEarned={rentEarned} streak={streak}
             setCoins={setCoins} setSavings={setSavings} setLoanActive={setLoanActive} setLoanRemaining={setLoanRemaining} setOwnedTiles={setOwnedTiles}
             onWalletShake={triggerWalletShake}
-            onScamAvoided={() => setScamsAvoided(n => n + 1)}
-            onInterestEarned={(n) => setInterestEarned(t => t + n)}
-            onClose={() => setModal(null)} />
+            onScamAvoided={() => { setScamsAvoided(n => n + 1); recordScamEncounter(true); }}
+            onInterestEarned={(n) => { setInterestEarned(t => t + n); recordInterest(n); }}
+            onClose={() => setModal(null)}
+            // ── NEW callbacks ──
+            onSaved={(amt) => recordSave(amt)}
+            onScamFailed={() => recordScamEncounter(false)}
+            onLoanTaken={() => recordLoanTaken(LOAN_AMOUNT, LOAN_REPAY)}
+          />
         )}
         {showATM   && <ATMModal savings={savings} onWithdraw={(amt) => { setSavings(s => s-amt); setCoins(c => c+amt); }} onClose={() => setShowATM(false)} />}
         {showHowTo && <HowToPlay onClose={() => setShowHowTo(false)} />}
 
-        {/* Win modal — player clicks "Unlock My House!" */}
         {showWin && !showUnlock && (
           <WinModal zenCoins={netWorth} savings={savings} scamsAvoided={scamsAvoided} interestEarned={interestEarned} onClaim={handleWinClaim} />
         )}
 
-        {/* Full-screen House Unlock cinematic overlay */}
         {showUnlock && (
           <HouseUnlockOverlay netWorth={netWorth + HOUSE_BONUS} onDone={handleUnlockDone} />
         )}
@@ -1445,8 +1485,6 @@ export default function BoardGame() {
           50%  { transform:translateY(-6px) scale(1.2) }
           100% { transform:translateY(0) scale(1) }
         }
-
-        /* ── House Unlock overlay animations ── */
         @keyframes houseUnlockReveal {
           0%   { transform:scale(0.6) translateY(40px); opacity:0 }
           65%  { transform:scale(1.04) translateY(-8px); opacity:1 }
@@ -1479,7 +1517,6 @@ export default function BoardGame() {
           0%   { transform:translateY(16px); opacity:0 }
           100% { transform:translateY(0); opacity:1 }
         }
-
         input:focus { border-color: #4ade80 !important; outline:none; }
         input::placeholder { color: rgba(255,255,255,0.3); }
         input[type=number] { -moz-appearance: textfield; }
