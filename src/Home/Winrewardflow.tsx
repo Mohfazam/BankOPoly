@@ -137,7 +137,7 @@ function ParchmentScreen({ children, style }: { children: ReactNode; style?: CSS
 }
 
 /** Green HUD bar — same gradient/border as BoardGame's top HUD */
-function HUDBar({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
+function HUDBar({ subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
   return (
     <div style={{
       position: 'sticky', top: 0, zIndex: 20,
