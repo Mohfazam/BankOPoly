@@ -4,7 +4,28 @@
 
 import{ useState, useEffect} from 'react';
 import { JSX } from 'react';
-import { useGameStats, deriveDashboardData } from '../Store/useGameStore';
+import { useGameStats } from '../Store/useGameStore';
+// TODO: Import or define deriveDashboardData from the correct location if needed.
+
+// Minimal deriveDashboardData implementation for demo purposes.
+// Replace this with your actual logic or import from the correct file.
+function deriveDashboardData(stats: any) {
+  // Example structure, adjust as needed for your app's stats shape.
+  return {
+    totalAmountSaved: stats?.totalAmountSaved ?? 0,
+    totalInterestEarned: stats?.totalInterestEarned ?? 0,
+    scamAvoidRate: stats?.scamsEncountered
+      ? Math.round((stats.scamsAvoided / stats.scamsEncountered) * 100)
+      : 0,
+    totalLoansTaken: stats?.loansHistory?.length ?? 0,
+    totalBorrowed: stats?.loansHistory?.reduce((sum: number, l: any) => sum + (l.borrowedAmount ?? 0), 0) ?? 0,
+    totalRepaid: stats?.loansHistory?.reduce((sum: number, l: any) => sum + (l.repaidAmount ?? 0), 0) ?? 0,
+    activeLoans: stats?.loansHistory?.filter((l: any) => !l.fullyRepaid).length ?? 0,
+    loansHistory: stats?.loansHistory ?? [],
+    scamsEncountered: stats?.scamsEncountered ?? 0,
+    scamsAvoided: stats?.scamsAvoided ?? 0,
+  };
+}
 
 // ─── Animated counter hook ────────────────────────────────────────────────────
 function useCountUp(target: number, duration = 1200, active = false) {
