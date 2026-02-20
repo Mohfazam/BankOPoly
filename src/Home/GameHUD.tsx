@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import PropertyInventory from './Propertyinventory'; // ← NEW
 
 export default function GameHUD() {
   const navigate = useNavigate();
@@ -43,6 +44,9 @@ export default function GameHUD() {
           <span style={{ fontSize:15 }}>🏗️</span>
           <span style={{ fontWeight:900, fontSize:14, color:'#86efac' }}>8 Plots Available</span>
         </div>
+
+        {/* ── NEW: Property Inventory button ── */}
+        <PropertyInventory />
 
         {/* CTA button */}
         <div style={{ marginLeft:'auto' }}>
