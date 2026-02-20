@@ -1,179 +1,55 @@
-'use client';
+import React from 'react';
+import { motion } from 'framer-motion'; // Add this import
+import { Dice } from '../Dice';
 
 interface BottomHUDProps {
-  onRoll: () => void;
-  rolling: boolean;
+  onDiceRoll: (value: number) => void;
+  disabled: boolean;
   diceValue: number;
-  turnsRemaining: number;
-  totalTurns: number;
+  isRolling: boolean;
+  onExit?: () => void;
 }
 
-export function BottomHUD({
-  onRoll,
-  rolling,
-  diceValue,
-  turnsRemaining,
-  totalTurns,
-}: BottomHUDProps) {
+export const BottomHUD: React.FC<BottomHUDProps> = ({ 
+  onDiceRoll, 
+  disabled, 
+  diceValue, 
+  isRolling,
+  onExit 
+}) => {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '16px 24px',
-      background: 'linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.3) 100%)',
-      backdropFilter: 'blur(12px)',
-      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-      gap: '20px',
-    }}>
-      {/* Quick stats */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'center',
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '20px',
-          padding: '6px 12px',
-          fontSize: '12px',
-          fontWeight: '700',
-          color: 'rgba(255, 255, 255, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
-          <span>✅</span>
-          <span>WINS</span>
-        </div>
+    <div className="absolute bottom-0 left-0 right-0 p-6 flex justify-between items-end z-10">
+      {/* Exit button */}
+      {onExit && (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onExit}
+          className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 border-2 border-gray-600 rounded-lg px-4 py-2 text-white font-bold backdrop-blur-sm"
+        >
+          ← Back to Town
+        </motion.button>
+      )}
 
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '20px',
-          padding: '6px 12px',
-          fontSize: '12px',
-          fontWeight: '700',
-          color: 'rgba(255, 255, 255, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
-          <span>🏗️</span>
-          <span>BUILD</span>
-        </div>
+      {/* Dice */}
+      <div className="flex-1 flex justify-center">
+        <Dice 
+          onRoll={onDiceRoll}
+          disabled={disabled}
+          value={diceValue}
+          isRolling={isRolling}
+        />
       </div>
 
-      {/* Turn progress */}
-      <div style={{
-        flex: 1,
-        maxWidth: '200px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
-        <div style={{
-          fontSize: '12px',
-          fontWeight: '700',
-          color: 'white',
-          fontFamily: 'monospace',
-        }}>
-          {turnsRemaining}/{totalTurns}
-        </div>
-        <div style={{
-          flex: 1,
-          height: '6px',
-          background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '3px',
-          overflow: 'hidden',
-        }}>
-          <div style={{
-            height: '100%',
-            width: `${(turnsRemaining / totalTurns) * 100}%`,
-            background: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
-            transition: 'width 0.3s ease',
-          }} />
-        </div>
-      </div>
-
-      {/* Dice button */}
-      <button
-        onClick={onRoll}
-        disabled={rolling}
-        style={{
-          width: '70px',
-          height: '70px',
-          borderRadius: '50%',
-          border: 'none',
-          background: rolling 
-            ? 'linear-gradient(135deg, #8b5cf6, #6d28d9)'
-            : 'linear-gradient(135deg, #ef4444, #dc2626)',
-          boxShadow: rolling
-            ? '0 0 32px rgba(139, 92, 246, 0.6), 0 8px 20px rgba(0, 0, 0, 0.3)'
-            : '0 8px 20px rgba(0, 0, 0, 0.3)',
-          cursor: rolling ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          gap: '4px',
-          transition: 'all 0.3s',
-          transform: rolling ? 'scale(1.05)' : 'scale(1)',
-          flexShrink: 0,
-        }}
+      {/* Instructions */}
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="bg-gradient-to-br from-blue-900/90 to-indigo-900/90 border-2 border-blue-400 rounded-lg p-3 backdrop-blur-sm"
       >
-        <div style={{
-          fontSize: '28px',
-        }}>
-          🎲
-        </div>
-        {!rolling && (
-          <div style={{
-            fontSize: '16px',
-            fontWeight: '900',
-            color: 'white',
-            textShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
-          }}>
-            {diceValue}
-          </div>
-        )}
-      </button>
-
-      {/* Right side stats */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'center',
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '20px',
-          padding: '6px 12px',
-          fontSize: '12px',
-          fontWeight: '700',
-          color: 'rgba(255, 255, 255, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
-          <span>🎖️</span>
-          <span>ALBUM</span>
-        </div>
-
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '20px',
-          padding: '6px 12px',
-          fontSize: '12px',
-          fontWeight: '700',
-          color: 'rgba(255, 255, 255, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-        }}>
-          <span>🤝</span>
-          <span>FRIENDS</span>
-        </div>
-      </div>
+        <div className="text-blue-400 text-sm">CURRENT TILE</div>
+        <div className="text-white font-bold">Roll to move</div>
+      </motion.div>
     </div>
   );
-}
+};
