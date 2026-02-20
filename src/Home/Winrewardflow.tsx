@@ -19,7 +19,7 @@
  * Store: useGameStore (wealth, unlockedBuildings, claimReward, unlockBuilding)
  */
 
-import React, {
+import {
   useState, useEffect, useRef, useCallback, ReactNode, CSSProperties,
 } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
