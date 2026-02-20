@@ -510,7 +510,7 @@ export function Frame11_Inventory({ onContinue }: { onContinue: () => void }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
-          {BUILDINGS.map((b, i) => {
+          {BUILDINGS.map((b) => {
             const owned = unlockedBuildings.includes(b.id);
             const isNew = b.id === 'house' && cardVisible;
             return (
