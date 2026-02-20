@@ -1,6 +1,4 @@
-// GameHUD.tsx
-// Frame 11 — shows "House Unlocked!" banner when player has wealth to spend.
-// Frame 13 — live wealth + buildings-placed counter in the top bar.
+// GameHUD.tsx  —  updated with GameBook navigation button
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,9 +8,26 @@ export default function GameHUD() {
   const navigate           = useNavigate();
   const wealth             = useGameStore(s => s.wealth);
   const unlockedBuildings  = useGameStore(s => s.unlockedBuildings);
+  const stats              = useGameStore(s => s.stats);
 
-  // Show the "reward arrived" banner only once per session when wealth > 0
-  const [showBanner, setShowBanner] = useState(false);
+  // Notify badge: how many GameBook chapters just became unlocked
+  const placedCount   = Object.keys(useGameStore(s => s.placedProperties)).length;
+  const anyLoanRepaid = stats.loansHistory.some(l => l.fullyRepaid);
+
+  function unlockedChapterCount(): number {
+    let n = 1; // 'money' always unlocked
+    if (wealth > 0)                           n++;
+    if (stats.totalAmountSaved > 0)           n++;
+    if (stats.totalInterestEarned > 0)        n++;
+    if (stats.loansHistory.length > 0)        n++;
+    if (anyLoanRepaid)                        n++;
+    if (stats.scamsEncountered > 0)           n++;
+    if (placedCount > 0)                      n++;
+    return Math.min(n, 8);
+  }
+  const chaptersUnlocked = unlockedChapterCount();
+
+  const [showBanner, setShowBanner]       = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
@@ -26,7 +41,7 @@ export default function GameHUD() {
   return (
     <>
       {/* ══════════════════════════════════════════════════════
-          TOP BAR — Frame 13: live wealth + progress
+          TOP BAR
       ══════════════════════════════════════════════════════ */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
@@ -60,7 +75,7 @@ export default function GameHUD() {
           <span style={{ fontWeight:900, fontSize:14, color:'#fed7aa' }}>Town Map</span>
         </div>
 
-        {/* Wealth pill — Frame 13 */}
+        {/* Wealth pill */}
         <div style={{ display:'flex', alignItems:'center', gap:6,
           background:'rgba(0,0,0,0.35)', border:'2px solid #c084fc',
           borderRadius:20, padding:'5px 14px' }}>
@@ -69,13 +84,12 @@ export default function GameHUD() {
           <span style={{ fontSize:9, color:'#c084fc', fontWeight:800, textTransform:'uppercase', letterSpacing:1 }}>wealth</span>
         </div>
 
-        {/* Buildings placed pill — Frame 13 */}
+        {/* Buildings pill */}
         <div style={{ display:'flex', alignItems:'center', gap:8,
           background:'rgba(0,0,0,0.35)', border:'2px solid #4ade80',
           borderRadius:20, padding:'5px 14px' }}>
           <span style={{ fontSize:14 }}>🏠</span>
           <span style={{ fontWeight:900, fontSize:14, color:'#86efac' }}>{builtCount}/{totalPlots}</span>
-          {/* Progress bar */}
           <div style={{ width:50, height:7, background:'rgba(255,255,255,0.15)', borderRadius:4, overflow:'hidden' }}>
             <div style={{
               height:'100%', borderRadius:4,
@@ -85,6 +99,59 @@ export default function GameHUD() {
             }} />
           </div>
         </div>
+
+        {/* ── GameBook button ── */}
+        <button
+          onClick={() => navigate('/gamebook')}
+          style={{
+            position: 'relative',
+            display: 'flex', alignItems: 'center', gap: 7,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.08) 100%)',
+            border: '2px solid rgba(251,191,36,0.55)',
+            borderRadius: 20, padding: '5px 15px',
+            cursor: 'pointer',
+            fontFamily: '"Nunito",system-ui,sans-serif',
+            fontWeight: 900, fontSize: 14, color: '#fbbf24',
+            transition: 'all 0.15s',
+            boxShadow: '0 0 14px rgba(251,191,36,0.15)',
+          }}
+          onMouseEnter={e => {
+            const el = e.currentTarget as HTMLButtonElement;
+            el.style.background = 'linear-gradient(135deg, rgba(251,191,36,0.3) 0%, rgba(251,191,36,0.15) 100%)';
+            el.style.borderColor = '#fbbf24';
+            el.style.boxShadow   = '0 0 20px rgba(251,191,36,0.3)';
+          }}
+          onMouseLeave={e => {
+            const el = e.currentTarget as HTMLButtonElement;
+            el.style.background = 'linear-gradient(135deg, rgba(251,191,36,0.18) 0%, rgba(251,191,36,0.08) 100%)';
+            el.style.borderColor = 'rgba(251,191,36,0.55)';
+            el.style.boxShadow   = '0 0 14px rgba(251,191,36,0.15)';
+          }}
+        >
+          <span style={{ fontSize: 15 }}>📖</span>
+          <span>Vault of Knowledge</span>
+
+          {/* Chapter count badge */}
+          <div style={{
+            background: 'linear-gradient(135deg, #fbbf24, #d97706)',
+            borderRadius: 99, padding: '1px 7px',
+            fontSize: 11, fontWeight: 900, color: '#1a0500',
+            marginLeft: 2,
+          }}>
+            {chaptersUnlocked}/8
+          </div>
+
+          {/* Pulse dot — shows when new chapter unlocked (all not yet seen) */}
+          {chaptersUnlocked > 1 && (
+            <div style={{
+              position: 'absolute', top: -3, right: -3,
+              width: 10, height: 10, borderRadius: '50%',
+              background: '#4ade80',
+              border: '2px solid #1e4012',
+              animation: 'hudPulse 1.8s ease-in-out infinite',
+            }} />
+          )}
+        </button>
 
         {/* Play button */}
         <div style={{ marginLeft:'auto' }}>
@@ -103,8 +170,7 @@ export default function GameHUD() {
       </div>
 
       {/* ══════════════════════════════════════════════════════
-          FRAME 11 — "House Unlocked!" inventory banner
-          Appears when player returns from board game with wealth.
+          FRAME 11 — "House Unlocked!" banner
       ══════════════════════════════════════════════════════ */}
       {showBanner && (
         <div style={{
@@ -116,15 +182,12 @@ export default function GameHUD() {
         }}>
           <div style={{
             background:'linear-gradient(135deg,#fef9c3,#fef08a)',
-            border:'4px solid #d97706',
-            borderRadius:20,
+            border:'4px solid #d97706', borderRadius:20,
             padding:'16px 20px',
             boxShadow:'0 12px 40px rgba(0,0,0,0.4), 0 0 0 6px rgba(251,191,36,0.2)',
             display:'flex', alignItems:'center', gap:14,
           }}>
-            {/* Bouncing house icon */}
             <div style={{ fontSize:44, animation:'houseBounce 1.2s ease-in-out infinite', flexShrink:0 }}>🏠</div>
-
             <div style={{ flex:1 }}>
               <div style={{ fontWeight:900, fontSize:16, color:'#92400e', marginBottom:3 }}>
                 House Card Unlocked!
@@ -133,18 +196,14 @@ export default function GameHUD() {
                 You earned <strong>₹{wealth.toLocaleString()}</strong> wealth from the board game.
                 Tap any empty plot on the map to place your house! 🏗️
               </div>
-              {/* Wealth bar */}
               <div style={{ marginTop:8, height:7, background:'rgba(0,0,0,0.12)', borderRadius:4, overflow:'hidden' }}>
                 <div style={{
-                  height:'100%', borderRadius:4,
-                  width:'100%',
+                  height:'100%', borderRadius:4, width:'100%',
                   background:'linear-gradient(90deg,#fbbf24,#f59e0b)',
                   animation:'fillBar 1s ease-out 0.3s both',
                 }} />
               </div>
             </div>
-
-            {/* Dismiss X */}
             <button
               onClick={() => { setShowBanner(false); setBannerDismissed(true); }}
               style={{
@@ -160,7 +219,7 @@ export default function GameHUD() {
       )}
 
       {/* ══════════════════════════════════════════════════════
-          BOTTOM HINT — updates once all plots are built
+          BOTTOM HINT
       ══════════════════════════════════════════════════════ */}
       <div style={{
         position:'fixed', bottom:24, left:'50%', transform:'translateX(-50%)',
@@ -173,25 +232,17 @@ export default function GameHUD() {
           boxShadow:'0 8px 28px rgba(0,0,0,0.35),0 0 0 4px rgba(251,191,36,0.2)',
           display:'flex', alignItems:'center', gap:12,
         }}>
-          <span style={{ fontSize:22 }}>
-            {builtCount === totalPlots ? '🏆' : '🏦'}
-          </span>
+          <span style={{ fontSize:22 }}>{builtCount === totalPlots ? '🏆' : '🏦'}</span>
           <div>
             {builtCount === totalPlots ? (
               <>
-                <div style={{ fontWeight:900, fontSize:14, color:'#92400e' }}>
-                  Town Complete! 🎉 You built everything!
-                </div>
-                <div style={{ fontSize:12, color:'#a16207', fontWeight:700, marginTop:1 }}>
-                  Your town is fully upgraded — amazing work!
-                </div>
+                <div style={{ fontWeight:900, fontSize:14, color:'#92400e' }}>Town Complete! 🎉 You built everything!</div>
+                <div style={{ fontSize:12, color:'#a16207', fontWeight:700, marginTop:1 }}>Your town is fully upgraded — amazing work!</div>
               </>
             ) : (
               <>
                 <div style={{ fontWeight:900, fontSize:14, color:'#92400e' }}>
-                  {wealth > 0
-                    ? 'Tap an empty plot to place a building!'
-                    : 'Click the Bank to play Bankopoly · Hover plots to inspect'}
+                  {wealth > 0 ? 'Tap an empty plot to place a building!' : 'Click the Bank to play Bankopoly · Hover plots to inspect'}
                 </div>
                 <div style={{ fontSize:12, color:'#a16207', fontWeight:700, marginTop:1 }}>
                   Drag to rotate · Scroll to zoom · {totalPlots - builtCount} plots left
@@ -199,9 +250,7 @@ export default function GameHUD() {
               </>
             )}
           </div>
-          <span style={{ fontSize:22 }}>
-            {builtCount === totalPlots ? '✨' : '🎲'}
-          </span>
+          <span style={{ fontSize:22 }}>{builtCount === totalPlots ? '✨' : '🎲'}</span>
         </div>
       </div>
 
@@ -226,6 +275,10 @@ export default function GameHUD() {
         @keyframes fillBar {
           from { width:0; }
           to   { width:100%; }
+        }
+        @keyframes hudPulse {
+          0%,100% { transform:scale(1); opacity:1 }
+          50%     { transform:scale(1.5); opacity:0.5 }
         }
 
         * { box-sizing: border-box; }
