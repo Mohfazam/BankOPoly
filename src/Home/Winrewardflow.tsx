@@ -696,7 +696,7 @@ export function Frame12_Placement({ onPlaced }: { onPlaced: () => void }) {
 // ─────────────────────────────────────────────────────────────────────────────
 interface Frame13Props { netWorth: number; townLevel?: number; onContinue: () => void; }
 
-export function Frame13_TownUpdated({ netWorth, townLevel = 4, onContinue }: Frame13Props) {
+export function Frame13_TownUpdated({ townLevel = 4, onContinue }: Frame13Props) {
   const wealth = useGameStore(s => s.wealth);
   const [fired, setFired] = useState(false);
   const displayCoins = useCountUp(fired ? wealth + 700 : wealth, 1400);
