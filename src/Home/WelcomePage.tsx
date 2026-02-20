@@ -779,7 +779,7 @@ export default function WelcomePage() {
           fontFamily: '"Press Start 2P", monospace',
           fontSize: 6, color: 'rgba(255,255,255,0.15)', letterSpacing: 1,
         }}>
-          v1.0.0 · BANKOPOLY © 2025
+          v1.0.0 · BANKOPOLY © 2026
         </div>
       </div>
 
