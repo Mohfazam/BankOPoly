@@ -1316,7 +1316,7 @@ export default function BoardGame() {
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', zIndex: 1 }}>
         <TurnSummary entries={turnLog} />
 
-        <div style={{ perspective: 1000, perspectiveOrigin: '50% 35%', flexShrink: 0 }}>
+        <div style={{ perspective: 1000, perspectiveOrigin: '50% 35%', flexShrink: 0, transform: 'translateY(-60px)' }}>
           <div style={{ width: BS, height: BS, transform: 'rotateX(40deg) rotateZ(-35deg)', transformStyle: 'preserve-3d', transformOrigin: 'center center', filter: 'drop-shadow(0 24px 40px rgba(0,0,0,0.25)) drop-shadow(0 6px 12px rgba(0,0,0,0.15))', animation: 'boardFloat 7s ease-in-out infinite' }}>
             <div style={{ position: 'relative', width: BS, height: BS, background: '#fef9c3', borderRadius: 12, outline: '4px solid #ca8a04', boxShadow: '0 0 0 10px #fbbf24, 0 0 0 13px #d97706' }}>
               <div style={{ position: 'absolute', top: CORN, left: CORN, width: BS-CORN*2, height: BS-CORN*2, background: '#16a34a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 4 }}>
