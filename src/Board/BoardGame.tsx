@@ -1309,6 +1309,7 @@ export default function BoardGame() {
           <button onClick={() => setShowATM(true)} style={{ width: 34, height: 34, borderRadius: 10, border: '2px solid #4ade80', background: 'rgba(0,0,0,0.4)', color: '#4ade80', fontWeight: 900, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="ATM">🏧</button>
           <button onClick={() => setShowHowTo(true)} style={{ width: 34, height: 34, borderRadius: 10, border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.4)', color: 'white', fontWeight: 900, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Help">❓</button>
           <button style={{ width: 34, height: 34, borderRadius: 10, border: '2px solid rgba(255,255,255,0.3)', background: 'rgba(0,0,0,0.4)', color: 'rgba(255,255,255,0.7)', fontWeight: 900, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Settings">⚙️</button>
+          <button onClick={() => window.location.href = '/town'} style={{ width: 34, height: 34, borderRadius: 10, border: '2px solid #f59e0b', background: 'rgba(0,0,0,0.4)', color: '#fbbf24', fontWeight: 900, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Home">🏠</button>
         </div>
       </div>
 
